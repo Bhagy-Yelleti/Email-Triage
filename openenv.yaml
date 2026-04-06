@@ -1,7 +1,7 @@
 name: openenv-email-triage-v1
 version: "1.0.0"
 description: Deterministic real-world email triage environment with dense rewards and task graders.
-entrypoint: src.app:app
+entrypoint: app:app
 runtime:
   container_port: 7860
   healthcheck_path: /health
