@@ -1,3 +1,13 @@
+---
+title: OpenEnv Email Triage
+emoji: "📨"
+colorFrom: indigo
+colorTo: blue
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # OpenEnv Email Triage Environment
 
 A deterministic, real-world OpenEnv environment for training and evaluating agents on customer email triage workflows. The environment models a realistic operations task: classify urgency, route ownership, and choose safe final handling actions under policy constraints.
