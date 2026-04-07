@@ -26,7 +26,7 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {"ok": True}
+    return {"status": "healthy", "ok": True}
 
 
 @app.post("/reset")

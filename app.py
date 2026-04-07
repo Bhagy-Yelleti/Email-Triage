@@ -24,7 +24,7 @@ def root():
 
 @app.get("/health")
 def health():
-    return {"ok": True}
+    return {"status": "healthy", "ok": True}
 
 
 @app.get("/reset")
@@ -111,3 +111,72 @@ def metadata():
         "tasks_with_graders": list(task_scores.keys()),
         "task_scores": task_scores,
     }
+
+
+@app.get("/schema")
+def schema():
+    """OpenEnv runtime schema endpoint — returns action, observation, and state schemas."""
+    return {
+        "action": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3,
+                    "description": "0=mark_urgent, 1=archive, 2=reply, 3=mark_spam",
+                }
+            },
+            "required": ["action"],
+        },
+        "observation": {
+            "type": "object",
+            "properties": {
+                "task_id": {"type": "string"},
+                "unread_emails_count": {"type": "integer"},
+                "urgent_emails_count": {"type": "integer"},
+                "spam_count": {"type": "integer"},
+                "steps_taken": {"type": "integer"},
+                "max_steps": {"type": "integer"},
+                "current_grader_score": {"type": "number"},
+            },
+        },
+        "state": {
+            "type": "object",
+            "properties": {
+                "task_id": {"type": "string"},
+                "unread_emails_count": {"type": "integer"},
+                "urgent_emails_count": {"type": "integer"},
+                "spam_count": {"type": "integer"},
+                "response_queue": {"type": "array", "items": {"type": "string"}},
+                "steps_taken": {"type": "integer"},
+                "max_steps": {"type": "integer"},
+                "episode_grader_score": {"type": ["number", "null"]},
+                "current_grader_score": {"type": "number"},
+            },
+        },
+    }
+
+
+@app.post("/mcp")
+def mcp(payload: Dict[str, Any] = Body(default={})):
+    """Minimal JSON-RPC 2.0 endpoint for OpenEnv MCP compatibility."""
+    method = payload.get("method", "")
+    req_id = payload.get("id", 1)
+    if method == "tools/list":
+        result = {
+            "tools": [
+                {"name": "reset", "description": "Reset the environment"},
+                {"name": "step", "description": "Take a step in the environment"},
+                {"name": "state", "description": "Get current state"},
+            ]
+        }
+    elif method == "initialize":
+        result = {
+            "protocolVersion": "2024-11-05",
+            "capabilities": {"tools": {}},
+            "serverInfo": {"name": "openenv-email-triage", "version": "1.0.0"},
+        }
+    else:
+        result = {"status": "ok", "service": "openenv-email-triage"}
+    return {"jsonrpc": "2.0", "id": req_id, "result": result}
