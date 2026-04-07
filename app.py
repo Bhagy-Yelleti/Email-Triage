@@ -6,7 +6,7 @@ from fastapi import Body, FastAPI
 from pydantic import BaseModel, Field
 
 from environment import EmailTriageEnv
-from graders import GRADERS
+from graders import GRADERS, GraderInput
 from tasks import TASK_LIST
 
 app = FastAPI(title="OpenEnv Email Triage", version="1.0.0")
@@ -62,12 +62,26 @@ def list_tasks() -> Dict[str, Any]:
     tasks_out: List[Dict[str, Any]] = []
     for spec in TASK_LIST:
         tid = spec.task_id
+        # Baseline deterministic score for this task at its initial state.
+        # Must remain strictly inside (0, 1).
+        baseline = GRADERS[tid](
+            GraderInput(
+                task_id=tid,
+                unread_emails_count=spec.unread_emails_count,
+                urgent_emails_count=spec.urgent_emails_count,
+                spam_count=spec.spam_count,
+                response_queue=[],
+                steps_taken=1,
+                max_steps=spec.max_steps,
+            )
+        )
         tasks_out.append(
             {
                 "id": tid,
                 "difficulty": spec.difficulty,
                 "has_grader": tid in GRADERS,
                 "grader_name": GRADERS[tid].__name__ if tid in GRADERS else None,
+                "score": baseline,
             }
         )
     return {"count": len(tasks_out), "tasks": tasks_out, "grader_task_ids": list(GRADERS.keys())}
@@ -76,8 +90,24 @@ def list_tasks() -> Dict[str, Any]:
 @app.get("/metadata")
 def metadata():
     """Optional OpenEnv-style metadata for runtime validators."""
+    task_scores = {}
+    for spec in TASK_LIST:
+        tid = spec.task_id
+        task_scores[tid] = GRADERS[tid](
+            GraderInput(
+                task_id=tid,
+                unread_emails_count=spec.unread_emails_count,
+                urgent_emails_count=spec.urgent_emails_count,
+                spam_count=spec.spam_count,
+                response_queue=[],
+                steps_taken=1,
+                max_steps=spec.max_steps,
+            )
+        )
     return {
         "name": "openenv-email-triage-v1",
         "description": "Realistic email triage with 3 graded tasks; scores in (0,1) open interval.",
         "version": "1.0.0",
+        "tasks_with_graders": list(task_scores.keys()),
+        "task_scores": task_scores,
     }
