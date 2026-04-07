@@ -25,7 +25,10 @@ api:
 tasks:
   - id: email-easy-001
     difficulty: easy
+    grader: graders.grade_email_easy_001
   - id: email-medium-001
     difficulty: medium
+    grader: graders.grade_email_medium_001
   - id: email-hard-001
     difficulty: hard
+    grader: graders.grade_email_hard_001
