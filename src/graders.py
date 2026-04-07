@@ -2,6 +2,20 @@ from __future__ import annotations
 
 from src.models import EmailState, GraderResult, TaskSpec
 
+# Scores must be strictly inside (0, 1) per validator requirements.
+_EPS = 0.02
+_MIN_SCORE = _EPS
+_MAX_SCORE = 1.0 - _EPS
+
+
+def _clamp_open(x: float) -> float:
+    """Map any float into the open interval (_MIN_SCORE, _MAX_SCORE)."""
+    if x <= 0.0:
+        return _MIN_SCORE
+    if x >= 1.0:
+        return _MAX_SCORE
+    return max(_MIN_SCORE, min(_MAX_SCORE, x))
+
 
 def grade_episode(task: TaskSpec, state: EmailState) -> GraderResult:
     priority_score = 1.0 if state.predicted_priority == task.expected_priority else 0.0
@@ -22,7 +36,7 @@ def grade_episode(task: TaskSpec, state: EmailState) -> GraderResult:
 
     # Penalties are tracked in-state and clipped here.
     raw = weighted - state.penalties
-    score = max(0.0, min(1.0, raw))
+    score = _clamp_open(raw)
     passed = score >= 0.80
 
     components = {
