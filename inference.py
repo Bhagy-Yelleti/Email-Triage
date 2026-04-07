@@ -11,8 +11,8 @@ from openai import OpenAI
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
-HF_TOKEN = os.getenv("HF_TOKEN")  # IMPORTANT: no default (per submission checklist)
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or HF_TOKEN
+# Validator injects API_KEY; fall back to OPENAI_API_KEY or HF_TOKEN
+API_KEY = os.getenv("API_KEY") or os.getenv("OPENAI_API_KEY") or os.getenv("HF_TOKEN")
 
 MAX_STEPS = 5
 TEMPERATURE = 0.0
@@ -98,10 +98,10 @@ def get_model_action(client: OpenAI, step: int, state: Dict[str, Any]) -> int:
 
 
 def main() -> None:
-    if OPENAI_API_KEY is None:
-        raise RuntimeError("Missing API key. Provide OPENAI_API_KEY or HF_TOKEN.")
+    if API_KEY is None:
+        raise RuntimeError("Missing API key. Provide API_KEY, OPENAI_API_KEY, or HF_TOKEN.")
 
-    client = OpenAI(base_url=API_BASE_URL, api_key=OPENAI_API_KEY)
+    client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
     task_name = "email-triage"
     env_name = "openenv-email-triage"
