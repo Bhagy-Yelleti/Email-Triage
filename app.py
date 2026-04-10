@@ -67,10 +67,8 @@ def list_tasks() -> Dict[str, Any]:
         baseline = GRADERS[tid](
             GraderInput(
                 task_id=tid,
-                unread_emails_count=spec.unread_emails_count,
-                urgent_emails_count=spec.urgent_emails_count,
-                spam_count=spec.spam_count,
-                response_queue=[],
+                emails=list(spec.emails),
+                action_history=[],
                 steps_taken=1,
                 max_steps=spec.max_steps,
             )
@@ -96,10 +94,8 @@ def metadata():
         task_scores[tid] = GRADERS[tid](
             GraderInput(
                 task_id=tid,
-                unread_emails_count=spec.unread_emails_count,
-                urgent_emails_count=spec.urgent_emails_count,
-                spam_count=spec.spam_count,
-                response_queue=[],
+                emails=list(spec.emails),
+                action_history=[],
                 steps_taken=1,
                 max_steps=spec.max_steps,
             )
@@ -133,11 +129,19 @@ def schema():
             "type": "object",
             "properties": {
                 "task_id": {"type": "string"},
-                "unread_emails_count": {"type": "integer"},
-                "urgent_emails_count": {"type": "integer"},
-                "spam_count": {"type": "integer"},
                 "steps_taken": {"type": "integer"},
                 "max_steps": {"type": "integer"},
+                "emails_remaining": {"type": "integer"},
+                "total_emails": {"type": "integer"},
+                "current_email": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "id": {"type": "string"},
+                        "sender": {"type": "string"},
+                        "subject": {"type": "string"},
+                        "body": {"type": "string"}
+                    }
+                },
                 "current_grader_score": {"type": "number"},
             },
         },
@@ -145,10 +149,8 @@ def schema():
             "type": "object",
             "properties": {
                 "task_id": {"type": "string"},
-                "unread_emails_count": {"type": "integer"},
-                "urgent_emails_count": {"type": "integer"},
-                "spam_count": {"type": "integer"},
-                "response_queue": {"type": "array", "items": {"type": "string"}},
+                "current_email_index": {"type": "integer"},
+                "action_history": {"type": "array", "items": {"type": "integer"}},
                 "steps_taken": {"type": "integer"},
                 "max_steps": {"type": "integer"},
                 "episode_grader_score": {"type": ["number", "null"]},

@@ -21,9 +21,11 @@ MAX_TOKENS = 32
 TASK_IDS = ["email-easy-001", "email-medium-001", "email-hard-001"]
 
 SYSTEM_PROMPT = (
-    "You are an RL controller for an email triage environment. "
-    "At each step, choose ONE action as an integer in {0,1,2,3} only. "
-    "Return a JSON object with exactly one key: action."
+    "You are an AI assistant helping triage emails. "
+    "At each step, you will be given the current email (sender, subject, body). "
+    "Choose ONE action as an integer in {0,1,2,3} only: "
+    "0=mark as urgent, 1=archive, 2=reply, 3=mark spam. "
+    "Return a JSON object with exactly one key: 'action'."
 )
 
 

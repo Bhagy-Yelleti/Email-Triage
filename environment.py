@@ -1,19 +1,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 from graders import GraderInput, grade_task
-from tasks import TASK_INDEX, TASK_LIST, TaskSpec
+from tasks import TASK_INDEX, TASK_LIST, TaskSpec, Email
 
 
 @dataclass
 class EmailTriageState:
     task_id: str = "email-easy-001"
-    unread_emails_count: int = 12
-    urgent_emails_count: int = 3
-    spam_count: int = 2
-    response_queue: List[str] = field(default_factory=list)
+    emails: List[Email] = field(default_factory=list)
+    current_email_index: int = 0
+    action_history: List[int] = field(default_factory=list)
     steps_taken: int = 0
     max_steps: int = 20
     # Final grader score for the task when episode ends (strictly in (0,1)).
@@ -39,10 +38,9 @@ class EmailTriageEnv:
     def _apply_task_spec(self, spec: TaskSpec) -> None:
         self._state = EmailTriageState(
             task_id=spec.task_id,
-            unread_emails_count=spec.unread_emails_count,
-            urgent_emails_count=spec.urgent_emails_count,
-            spam_count=spec.spam_count,
-            response_queue=[],
+            emails=list(spec.emails),
+            current_email_index=0,
+            action_history=[],
             steps_taken=0,
             max_steps=spec.max_steps,
             episode_grader_score=None,
@@ -55,17 +53,41 @@ class EmailTriageEnv:
             spec = TASK_LIST[self._task_cursor % len(TASK_LIST)]
             self._task_cursor += 1
         self._apply_task_spec(spec)
-        return self.state()
+        return self._observation()
+
+    def _observation(self) -> Dict[str, object]:
+        obs = {
+            "task_id": self._state.task_id,
+            "steps_taken": self._state.steps_taken,
+            "max_steps": self._state.max_steps,
+            "emails_remaining": len(self._state.emails) - self._state.current_email_index,
+            "total_emails": len(self._state.emails),
+        }
+        
+        if self._state.current_email_index < len(self._state.emails):
+            current = self._state.emails[self._state.current_email_index]
+            obs["current_email"] = {
+                "id": current.id,
+                "sender": current.sender,
+                "subject": current.subject,
+                "body": current.body,
+            }
+        else:
+            obs["current_email"] = None
+            
+        g_in = self._grader_input()
+        obs["current_grader_score"] = grade_task(self._state.task_id, g_in)
+        
+        return obs
 
     def state(self) -> Dict[str, object]:
         g_in = self._grader_input()
         current_partial = grade_task(self._state.task_id, g_in)
+        
         return {
             "task_id": self._state.task_id,
-            "unread_emails_count": self._state.unread_emails_count,
-            "urgent_emails_count": self._state.urgent_emails_count,
-            "spam_count": self._state.spam_count,
-            "response_queue": list(self._state.response_queue),
+            "current_email_index": self._state.current_email_index,
+            "action_history": list(self._state.action_history),
             "steps_taken": self._state.steps_taken,
             "max_steps": self._state.max_steps,
             "episode_grader_score": self._state.episode_grader_score,
@@ -77,10 +99,8 @@ class EmailTriageEnv:
     def _grader_input(self) -> GraderInput:
         return GraderInput(
             task_id=self._state.task_id,
-            unread_emails_count=self._state.unread_emails_count,
-            urgent_emails_count=self._state.urgent_emails_count,
-            spam_count=self._state.spam_count,
-            response_queue=list(self._state.response_queue),
+            emails=self._state.emails,
+            action_history=list(self._state.action_history),
             steps_taken=self._state.steps_taken,
             max_steps=self._state.max_steps,
         )
@@ -98,52 +118,26 @@ class EmailTriageEnv:
         if action not in {0, 1, 2, 3}:
             self._advance_step()
             return {
-                "state": self.state(),
+                "state": self._observation(),
                 "reward": self._step_reward_open(0.0),
                 "done": self._is_done(),
             }
 
-        reward = 0.4
+        reward = 0.0
 
-        has_urgent = self._state.urgent_emails_count > 0
-        has_spam = self._state.spam_count > 0
-
-        if action == 0:
-            if self._state.unread_emails_count > self._state.urgent_emails_count + self._state.spam_count:
-                self._state.urgent_emails_count += 1
-                reward = 0.7
+        if self._state.current_email_index < len(self._state.emails):
+            current = self._state.emails[self._state.current_email_index]
+            self._state.action_history.append(action)
+            self._state.current_email_index += 1
+            
+            # Partial reward based on correct action
+            if action == current.expected_action:
+                reward = 1.0  # correct triage
             else:
-                reward = 0.0
-
-        elif action == 1:
-            if self._state.unread_emails_count > 0 and not has_urgent:
-                self._state.unread_emails_count -= 1
-                reward = 0.7
-            elif has_urgent:
-                reward = 0.0
-            else:
-                reward = 0.4
-
-        elif action == 2:
-            if has_urgent:
-                self._state.urgent_emails_count -= 1
-                self._state.unread_emails_count = max(0, self._state.unread_emails_count - 1)
-                self._state.response_queue.append("urgent_email_replied")
-                reward = 1.0
-            elif self._state.unread_emails_count > 0:
-                self._state.unread_emails_count -= 1
-                self._state.response_queue.append("normal_email_replied")
-                reward = 0.7
-            else:
-                reward = 0.4
-
-        elif action == 3:
-            if has_spam:
-                self._state.spam_count -= 1
-                self._state.unread_emails_count = max(0, self._state.unread_emails_count - 1)
-                reward = 0.7
-            else:
-                reward = 0.0
+                reward = 0.0  # incorrect triage
+        else:
+            # no more emails
+            reward = 0.0
 
         self._advance_step()
         reward = self._step_reward_open(reward)
@@ -154,15 +148,11 @@ class EmailTriageEnv:
             self._state.episode_grader_score = final
             self._completed_task_scores[self._state.task_id] = final
 
-        return {"state": self.state(), "reward": reward, "done": done}
+        return {"state": self._observation(), "reward": reward, "done": done}
 
     def _advance_step(self) -> None:
         self._state.steps_taken += 1
 
     def _is_done(self) -> bool:
-        no_work_left = (
-            self._state.unread_emails_count <= 0
-            and self._state.urgent_emails_count <= 0
-            and self._state.spam_count <= 0
-        )
+        no_work_left = self._state.current_email_index >= len(self._state.emails)
         return no_work_left or self._state.steps_taken >= self._state.max_steps
