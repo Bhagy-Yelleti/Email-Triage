@@ -490,7 +490,7 @@
             if (e.deadline_extracted) reasons.push(`deadline phrase detected: ${e.deadline_extracted}`);
             if (reasons.length === 0) reasons.push('routine request processing');
             
-            reasons.push(`confidence score: ${confVal}%`);
+            reasons.push(`decision confidence: ${confVal}%`);
             return reasons;
         }
 
@@ -521,7 +521,7 @@
 
                 let draftHtml = `
                     <div class="ai-draft">
-                        <div class="ai-draft-title">✨ Suggested Reply</div>
+                        <div class="ai-draft-title">✨ AI Action Recommendation</div>
                         <div class="ai-draft-body">Hi, I’ve escalated the issue and the team is actively working on it.</div>
                         <div class="btn-use-reply" onclick="performAction(2)">Use Reply</div>
                     </div>
@@ -586,7 +586,7 @@
                     <div class="mail-body" style="opacity:0.6">${m.prev}<br><br><em>(This task was successfully triaged by the AI agent.)</em></div>
                 `;
                 reasonEl.innerHTML = `<li>Task completed successfully</li>`;
-                rewList.innerHTML = `<div class="reward-row"><span>Agent Score</span> <span class="reward-val">1.00</span></div>`;
+                rewList.innerHTML = `<div class="reward-row"><span>Agent Reward</span> <span class="reward-val">1.00</span></div>`;
             } else {
                 mainEl.innerHTML = `<div style="height:100%; display:flex; align-items:center; justify-content:center; color:var(--text-secondary)">Task is locked. Complete pending tasks.</div>`;
             }
