@@ -19,15 +19,11 @@ class ResetBody(BaseModel):
     task_id: Optional[str] = None
 
 
-@app.get("/")
-def root():
-    return {"service": "openenv-email-triage", "status": "ok"}
+from pathlib import Path
 
-
-@app.get("/dashboard", response_class=HTMLResponse)
-def dashboard():
-    with open(os.path.join(os.path.dirname(__file__), "frontend.html"), "r", encoding="utf-8") as f:
-        return HTMLResponse(content=f.read())
+@app.get("/", response_class=HTMLResponse)
+async def home():
+    return Path(os.path.join(os.path.dirname(__file__), "frontend.html")).read_text(encoding="utf-8")
 
 
 @app.get("/health")
