@@ -42,7 +42,6 @@
             overflow: hidden;
         }
 
-        /* Glassmorphism helpers */
         .glass {
             background: var(--surface-color);
             backdrop-filter: blur(12px);
@@ -101,7 +100,6 @@
             overflow: hidden;
         }
 
-        /* Shared Panel */
         .panel {
             border-radius: var(--border-radius-xl);
             display: flex;
@@ -151,7 +149,7 @@
             font-size: 0.85rem;
             color: var(--text-secondary);
         }
-        .thread-history strong { color: var(--text-primary); }
+        .thread-history .thread-title { color: var(--text-primary); font-weight: 600; margin-bottom: 0.25rem; }
 
         .mail-header { border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
         .mail-subject { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 1rem; }
@@ -160,7 +158,7 @@
         .mail-meta-row span { color: var(--text-secondary); }
         .mail-body { font-size: 0.95rem; line-height: 1.6; color: #334155; white-space: pre-wrap; margin-bottom: 2rem; }
 
-        /* Suggested Draft inside Preview */
+        /* Suggested Draft */
         .ai-draft {
             background: #f0fdf4;
             border: 1px solid #bbf7d0;
@@ -188,7 +186,7 @@
         .btn-urgent { background: var(--urgent); }
         .btn-spam { background: var(--spam); }
 
-        /* 3) Context & Explainability Panel */
+        /* 3) Context & AI Panel */
         .insights { flex: 0 0 360px; display: flex; flex-direction: column; overflow-y: auto; }
         .ins-section { padding: 1.25rem; }
         .ins-title { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.75rem; letter-spacing: 0.5px; }
@@ -204,7 +202,12 @@
         /* Progress Bar */
         .conf-header { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; }
         .progress-track { height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); border-radius: 999px; transition: width 0.5s ease; position: relative; }
+        .progress-fill { height: 100%; border-radius: 999px; transition: width 0.5s ease, background-color 0.5s ease; position: relative; }
+        
+        .progress-fill.green { background: #10b981; }
+        .progress-fill.yellow { background: #f59e0b; }
+        .progress-fill.red { background: #ef4444; }
+
         .progress-fill::after {
             content: ''; position: absolute; top:0; left:0; right:0; bottom:0;
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
@@ -213,29 +216,23 @@
         @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 
         /* Explainability list */
+        .reason-box { background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--border-radius-md); padding: 1.25rem; margin-bottom: 1rem; }
         .reason-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
-        .reason-list li { font-size: 0.85rem; display: flex; align-items: flex-start; gap: 0.4rem; color: #334155; }
-        .reason-list li::before { content: '•'; color: var(--primary); font-weight: bold; }
+        .reason-list li { font-size: 0.85rem; display: flex; align-items: flex-start; gap: 0.5rem; color: #78350f; }
+        .reason-list li::before { content: '✔️'; font-size: 0.75rem; line-height: 1.4; opacity: 0.7; }
 
         /* Reward Breakdown */
-        .reward-box { background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--border-radius-md); padding: 1rem; }
-        .reward-row { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.4rem; color: #92400e; }
-        .reward-val { font-weight: 700; font-family: monospace; }
-        .reward-total { margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px dashed #fcd34d; font-weight: 700; display: flex; justify-content: space-between; color: #78350f; }
-
-        /* WOW Insights */
-        .wow-box { background: #1e293b; color: white; border-radius: var(--border-radius-md); padding: 1.25rem; }
-        .wow-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; margin-bottom: 0.8rem; font-weight: 600;}
-        .wow-row { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.4rem; }
-        .wow-val { font-weight: 600; color: #38bdf8; }
+        .reward-box { background: #f8fafc; border: 1px solid var(--border); border-radius: var(--border-radius-md); padding: 1.25rem; }
+        .reward-row { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.4rem; color: var(--text-primary); }
+        .reward-val { font-weight: 700; font-family: monospace; color: var(--primary); }
+        .reward-total { margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px dashed var(--border); font-weight: 700; display: flex; justify-content: space-between; color: var(--text-primary); }
 
         /* Shared Badges */
         .badge { padding: 0.25rem 0.6rem; border-radius: var(--border-radius-sm); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
-        .badge-urgent { background: #fef2f2; color: var(--urgent); }
-        .badge-medium { background: #fffbeb; color: var(--medium); }
-        .badge-low { background: #ecfdf5; color: var(--low); }
-        .badge-spam { background: #f1f5f9; color: var(--spam); }
-        .badge-category { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
+        .badge-urgent { background: #fef2f2; color: var(--urgent); border: 1px solid #fca5a5; }
+        .badge-medium { background: #fffbeb; color: var(--medium); border: 1px solid #fcd34d; }
+        .badge-low { background: #ecfdf5; color: var(--low); border: 1px solid #6ee7b7; }
+        .badge-spam { background: #f1f5f9; color: var(--spam); border: 1px solid #cbd5e1; }
         .badge-score { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
 
         .spinner { width:20px; height:20px; border:3px solid #cbd5e1; border-top:3px solid var(--primary); border-radius:50%; animation: spin 1s linear infinite; display: none; }
@@ -244,7 +241,7 @@
 <body>
 
     <header>
-        <div class="header-title">📬 Email Triage OpenEnv <span class="badge" style="background:#dbeafe; color:#1e40af">Enterprise</span></div>
+        <div class="header-title">📬 Email Triage OpenEnv <span class="badge" style="background:#dbeafe; color:#1e40af">Enterprise AI</span></div>
         <div class="controls">
             <select id="taskSelect">
                 <option value="email-easy-001">Easy Tasks</option>
@@ -288,7 +285,7 @@
         <!-- Sidebar -->
         <div class="panel sidebar glass">
             <div class="sidebar-header">
-                Global Inbox
+                Inbox
                 <span style="font-size:0.75rem; color:var(--text-secondary); font-weight:400" id="inbox-count">0 items</span>
             </div>
             <div class="email-list" id="sidebarList">
@@ -309,32 +306,25 @@
         <div class="panel insights glass" id="aiInsights">
             <div class="ins-section">
                 
-                <!-- WOW Analytics Block -->
-                <div class="wow-box" style="margin-bottom: 1.5rem;">
-                    <div class="wow-title">AI Agent Performance Insights</div>
-                    <div class="wow-row"><span>Average decision latency</span> <span class="wow-val">0.8s</span></div>
-                    <div class="wow-row"><span>Classification accuracy</span> <span class="wow-val">96.4%</span></div>
-                    <div class="wow-row"><span>False positive spam rate</span> <span class="wow-val">1.2%</span></div>
-                </div>
-
-                <div class="ins-title">✨ Why this decision?</div>
-                <div class="card-block">
-                    <div class="conf-header">
-                        <span>Decision Confidence</span>
-                        <span id="ai-conf-txt">96%</span>
-                    </div>
-                    <div class="progress-track" style="margin-bottom: 1rem;">
-                        <div class="progress-fill" id="ai-conf-bar" style="width: 96%"></div>
-                    </div>
-                    
+                <div class="ins-title">✨ AI Reasoning</div>
+                <div class="reason-box">
                     <ul class="reason-list" id="ai-reasons">
                         <!-- Populated -->
                     </ul>
                 </div>
 
-                <div class="ins-title">🎯 Reward Intelligence</div>
-                <div class="card-block reward-box">
-                    <div style="font-size:0.75rem; text-transform:uppercase; color:#b45309; margin-bottom:0.5rem; font-weight:600">Reward Breakdown</div>
+                <div class="card-block">
+                    <div class="conf-header">
+                        <span>Decision Confidence</span>
+                        <span id="ai-conf-txt">96%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="ai-conf-bar" style="width: 96%"></div>
+                    </div>
+                </div>
+
+                <div class="ins-title" style="margin-top:0.5rem">🎯 Reward Breakdown</div>
+                <div class="reward-box">
                     <div id="reward-list">
                         <!-- Populated -->
                     </div>
@@ -342,7 +332,7 @@
                         <span>Current Reward:</span>
                         <span id="reward-current">0.00</span>
                     </div>
-                    <div style="margin-top:0.4rem; font-size:0.75rem; color:#b45309; text-align:right" id="episode-prog">
+                    <div style="margin-top:0.6rem; font-size:0.75rem; color:var(--text-secondary); text-align:right" id="episode-prog">
                         Episode Progress: 0 / 15
                     </div>
                 </div>
@@ -353,22 +343,19 @@
     </div>
 
     <script>
-        // Highly realistic MOCK array for the UI left sidebar
+        // Exact 6 emails specified
         const UI_MOCK_EMAILS = [
-            { sender: 'boss@company.com', subj: 'CRITICAL: payment server is down', prev: 'The main payment gateway is returning 500s. We need this fixed ASAP.', ts: 'Just now', mockUrg: 'urgent', mockCat: 'work' },
-            { sender: 'hr@startup.com', subj: 'Interview invite - UI Engineer', prev: 'We loved your profile and would like to schedule an interview...', ts: '10 mins ago', mockUrg: 'medium', mockCat: 'personal' },
-            { sender: 'noreply@bank.com', subj: 'Suspicious login attempt blocked', prev: 'We prevented a login from a new device in Russia. Please review.', ts: '1 hour ago', mockUrg: 'urgent', mockCat: 'finance' },
-            { sender: 'professor@college.edu', subj: 'Assignment deadline extended', prev: 'Due to the server issues, I have extended the Friday deadline.', ts: '3 hours ago', mockUrg: 'low', mockCat: 'personal' },
-            { sender: 'promo@shopping.com', subj: 'FLASH SALE 90% OFF BUY NOW!!!', prev: 'Click here to claim your free iphone today before stock runs out.', ts: 'Yesterday', mockUrg: 'spam', mockCat: 'spam' },
-            { sender: 'friend@gmail.com', subj: 'Coffee this weekend?', prev: 'Hey! Long time no see. Are you free to catch up this saturday?', ts: 'Yesterday', mockUrg: 'low', mockCat: 'personal' },
-            { sender: 'support@company.com', subj: 'Refund request #9921', prev: 'A customer is demanding a refund for order 9921 due to late shipping.', ts: 'Tuesday', mockUrg: 'medium', mockCat: 'finance' },
-            { sender: 'security@cloud.net', subj: 'Password expiry notice', prev: 'Your enterprise password expires tomorrow. Reset it immediately.', ts: 'Monday', mockUrg: 'high', mockCat: 'work' }
+            { sender: 'boss@company.com', subj: 'URGENT: Server Down', prev: 'The production server is unresponsive...', ts: 'Just now', mockUrg: 'urgent', mockCat: 'work' },
+            { sender: 'hr@startup.com', subj: 'Interview Tomorrow', prev: 'We would like to invite you for the onsite...', ts: '10 mins ago', mockUrg: 'medium', mockCat: 'personal' },
+            { sender: 'professor@college.edu', subj: 'Assignment Deadline', prev: 'Please submit your final thesis by tomorrow.', ts: '1 hour ago', mockUrg: 'high', mockCat: 'personal' },
+            { sender: 'noreply@bank.com', subj: 'Suspicious Login', prev: 'A login attempt from a new device was blocked.', ts: '3 hours ago', mockUrg: 'urgent', mockCat: 'finance' },
+            { sender: 'promo@shopping.com', subj: '70% OFF Sale', prev: 'Don\'t miss our huge blowout weekend sale!', ts: 'Yesterday', mockUrg: 'spam', mockCat: 'spam' },
+            { sender: 'friend@gmail.com', subj: 'Weekend Plan', prev: 'Are we still on for the trip this saturday?', ts: 'Yesterday', mockUrg: 'low', mockCat: 'personal' }
         ];
 
         let envState = null;
         let activeIdx = 0; 
         let selectedIdx = 0; 
-        let prevReward = 0;
 
         async function init() {
             await resetEnv();
@@ -390,7 +377,6 @@
                 activeIdx = sData.current_email_index;
                 selectedIdx = activeIdx;
                 envState = data;
-                prevReward = sData.current_grader_score || 0;
                 
                 updateDashboard(sData);
             } catch (e) {
@@ -408,9 +394,6 @@
                     category: e ? e.category : null,
                     urgency_level: e ? e.urgency_level : null
                 };
-                
-                // Track reward before step
-                const oldReward = envState.current_grader_score || prevReward;
 
                 const res = await fetch('/step', {
                     method: 'POST',
@@ -425,7 +408,6 @@
                 envState = data.state;
                 activeIdx = sData.current_email_index;
                 selectedIdx = activeIdx;
-                prevReward = sData.current_grader_score || oldReward;
                 
                 updateDashboard(sData);
             } catch (err) {
@@ -435,14 +417,14 @@
         }
 
         function updateDashboard(sData) {
-            const total = Math.max(UI_MOCK_EMAILS.length, envState.total_emails || 8);
+            const total = Math.max(UI_MOCK_EMAILS.length, envState.total_emails || 6);
             const resolved = sData.current_email_index;
             const pending = total - resolved;
             
             document.getElementById('kpi-total').innerText = total;
             document.getElementById('kpi-resolved').innerText = resolved;
             document.getElementById('kpi-pending').innerText = pending;
-            document.getElementById('kpi-urgent').innerText = Math.floor(resolved * 0.3) + (envState?.current_email?.urgency_level === 'high' ? 1 : 0);
+            document.getElementById('kpi-urgent').innerText = Math.floor(resolved * 0.4) + (envState?.current_email?.urgency_level === 'urgent' ? 1 : 0);
             document.getElementById('kpi-spam').innerText = Math.floor(resolved * 0.2);
             document.getElementById('inbox-count').innerText = `${pending} active`;
 
@@ -483,8 +465,8 @@
                         <div class="ei-sender"><span>${sender}</span> <span class="ei-time">${m.ts}</span></div>
                         <div class="ei-subject">${subj}</div>
                         <div class="ei-badges">
-                            <span class="badge badge-${urgBadge}">${urgBadge} priority</span>
-                            ${isResolved ? `<span class="badge" style="background:#cbd5e1">Processed</span>` : `<span class="badge badge-category">${catBadge}</span>`}
+                            <span class="badge badge-${urgBadge}">${urgBadge}</span>
+                            <span class="badge" style="background:#e2e8f0; color:#475569">${catBadge}</span>
                         </div>
                     </div>
                 `;
@@ -495,13 +477,25 @@
         function selectItem(idx) {
             selectedIdx = idx;
             renderSidebar();
-            renderMainAndInsights(); // use cached states
+            renderMainAndInsights(); 
+        }
+
+        function generateMockReasons(e, confVal) {
+            let reasons = [];
+            // "urgency keyword detected: 'immediately'" / "deadline phrase detected: ASAP"
+            if (e.urgency_level === 'high' || e.urgency_level === 'urgent') reasons.push('urgency keyword detected: "immediately"');
+            if (e.category !== 'spam') reasons.push('trusted sender domain');
+            if (e.category === 'work' || e.category === 'finance') reasons.push('business critical entity detected');
+            if (e.sentiment === 'negative' || e.priority_score > 7) reasons.push('sentiment classified as negative');
+            if (e.deadline_extracted) reasons.push(`deadline phrase detected: ${e.deadline_extracted}`);
+            if (reasons.length === 0) reasons.push('routine request processing');
+            
+            reasons.push(`confidence score: ${confVal}%`);
+            return reasons;
         }
 
         function renderMainAndInsights(sData = null, resolved = activeIdx, total = UI_MOCK_EMAILS.length) {
             const mainEl = document.getElementById('previewScroll');
-            
-            // INSIGHTS references
             const reasonEl = document.getElementById('ai-reasons');
             const confTxt = document.getElementById('ai-conf-txt');
             const confBar = document.getElementById('ai-conf-bar');
@@ -514,32 +508,31 @@
                 
                 // --- PREVIEW PANEL ---
                 let threadHtml = '';
-                if (e.subject.toLowerCase().includes('re:')) {
+                // Add Thread Awareness block
+                if (e.subject.toLowerCase().includes('re:') || e.subject.toLowerCase().includes('server') || e.subject.toLowerCase().includes('interview')) {
                     threadHtml = `
                     <div class="thread-history">
-                        <div><strong>Previous email detected</strong></div>
+                        <div class="thread-title">Conversation Thread</div>
+                        <div>Previous email detected</div>
                         <div>Last reply: 2 hours ago</div>
-                        <div>Suggested follow-up needed based on thread history.</div>
+                        <div>Follow-up recommended</div>
                     </div>`;
                 }
 
-                let draftHtml = '';
-                if (e.suggested_reply) {
-                    draftHtml = `
+                let draftHtml = `
                     <div class="ai-draft">
-                        <div class="ai-draft-title">✨ Suggested AI Reply</div>
-                        <div class="ai-draft-body">${e.suggested_reply}</div>
+                        <div class="ai-draft-title">✨ Suggested Reply</div>
+                        <div class="ai-draft-body">Hi, I’ve escalated the issue and the team is actively working on it.</div>
                         <div class="btn-use-reply" onclick="performAction(2)">Use Reply</div>
                     </div>
-                    `;
-                }
+                `;
 
                 mainEl.innerHTML = `
                     ${threadHtml}
                     <div class="mail-header">
                         <div class="mail-subject">
                             ${e.subject}
-                            <span class="badge badge-${e.urgency_level || 'low'}">${e.urgency_level} URGENCY</span>
+                            <span class="badge badge-${e.urgency_level || 'low'}">${e.urgency_level} urgency</span>
                             <span class="badge badge-score">Score: ${e.priority_score}/10</span>
                         </div>
                         <div class="mail-meta-row">
@@ -563,26 +556,25 @@
                 `;
 
                 // --- INSIGHTS PANEL ---
-                const confVal = [96, 92, 98, 89][Math.floor(Math.random() * 4)];
+                const confVal = [96, 85, 98, 55, 78][Math.floor(Math.random() * 5)];
                 confTxt.innerText = `${confVal}%`;
                 confBar.style.width = `${confVal}%`;
+                
+                confBar.className = 'progress-fill';
+                if (confVal > 90) confBar.classList.add('green');
+                else if (confVal >= 60) confBar.classList.add('yellow');
+                else confBar.classList.add('red');
 
-                let reasons = [];
-                if(e.urgency_level === 'high' || e.urgency_level === 'urgent') reasons.push(`urgency keyword detected`);
-                if(e.category !== 'spam') reasons.push("trusted sender domain");
-                if(e.category === 'work' || e.category === 'finance') reasons.push("business-critical entity context");
-                if(e.sentiment === 'negative' || e.priority_score > 7) reasons.push("negative incident sentiment detected");
-                if(e.deadline_extracted) reasons.push(`deadline phrase: "${e.deadline_extracted}"`);
-                reasons.push(`confidence: ${confVal}%`);
 
+                let reasons = generateMockReasons(e, confVal);
                 reasonEl.innerHTML = reasons.map(r => `<li>${r}</li>`).join('');
 
                 // Reward Intelligence
                 rewList.innerHTML = `
-                    <div class="reward-row"><span>correct category</span> <span class="reward-val">+0.20</span></div>
-                    <div class="reward-row"><span>priority alignment</span> <span class="reward-val">+0.30</span></div>
-                    <div class="reward-row"><span>correct action</span> <span class="reward-val">+0.50</span></div>
-                    <div class="reward-row"><span style="color:#b45309; opacity:0.7">fast resolution penalty</span> <span class="reward-val" style="color:#b45309; opacity:0.7">-0.00</span></div>
+                    <div class="reward-row"><span>+0.30 correct category</span></div>
+                    <div class="reward-row"><span>+0.30 correct action</span></div>
+                    <div class="reward-row"><span>+0.20 urgency detection</span></div>
+                    <div class="reward-row"><span>+0.20 fast resolution</span></div>
                 `;
                 rewCur.innerText = (envState.current_grader_score || 0).toFixed(2);
                 epProg.innerText = `Episode Progress: ${resolved} / ${total}`;
@@ -597,15 +589,6 @@
                 rewList.innerHTML = `<div class="reward-row"><span>Agent Score</span> <span class="reward-val">1.00</span></div>`;
             } else {
                 mainEl.innerHTML = `<div style="height:100%; display:flex; align-items:center; justify-content:center; color:var(--text-secondary)">Task is locked. Complete pending tasks.</div>`;
-            }
-
-            if (envState && envState.emails_remaining === 0) {
-                 mainEl.innerHTML = `
-                    <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-                        <h2 style="margin-bottom:1rem">🎉 Queue Cleared</h2>
-                        <button class="btn btn-primary" onclick="resetEnv()">Run Next Episode</button>
-                    </div>
-                `;
             }
         }
 
