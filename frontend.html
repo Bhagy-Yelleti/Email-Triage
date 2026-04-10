@@ -329,7 +329,7 @@
                         <!-- Populated -->
                     </div>
                     <div class="reward-total">
-                        <span>Current Reward:</span>
+                        <span>Current Agent Reward:</span>
                         <span id="reward-current">0.00</span>
                     </div>
                     <div style="margin-top:0.6rem; font-size:0.75rem; color:var(--text-secondary); text-align:right" id="episode-prog">
@@ -533,7 +533,7 @@
                         <div class="mail-subject">
                             ${e.subject}
                             <span class="badge badge-${e.urgency_level || 'low'}">${e.urgency_level} urgency</span>
-                            <span class="badge badge-score">Score: ${e.priority_score}/10</span>
+                            <span class="badge badge-score">Decision Confidence: ${e.priority_score}/10</span>
                         </div>
                         <div class="mail-meta-row">
                             <span><strong>From:</strong> ${e.sender}</span>

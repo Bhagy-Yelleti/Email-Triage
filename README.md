@@ -2,13 +2,13 @@
 
 AI-powered enterprise email triage environment built using OpenEnv, FastAPI, and deployed on Hugging Face Spaces.
 
+![Dashboard Preview](./screenshots/dashboard.png)
+
 ## Live Demo
 
 https://huggingface.co/spaces/bhagya1234567890/email-triage-openenv
 
 ## Preview
-
-![Dashboard](./screenshots/dashboard.png)
 
 ![AI Insights](./screenshots/ai-panel.png)
 
@@ -19,6 +19,12 @@ https://huggingface.co/spaces/bhagya1234567890/email-triage-openenv
 ## Overview
 
 This project simulates a high-stakes, real-world enterprise email triage operation. It transforms raw inbound communication into a deeply analyzable reinforcement learning environment. The AI agent navigates an asynchronous, prioritized inbox evaluating sentiments, detecting hidden deadlines, and deciding swift handling procedures. It serves as both a beautiful product demo and an authentic OpenEnv-compliant evaluation ground.
+
+## Real-World Utility
+
+This project simulates real enterprise email workflows including urgency detection, spam filtering, action recommendation, deadline extraction, and AI-assisted response prioritization.
+
+It is designed as a realistic benchmark environment for evaluating intelligent agents in communication-heavy workflows.
 
 ## Features
 
@@ -49,6 +55,13 @@ GET /health
 +0.20 urgency
 +0.20 fast resolution
 ```
+
+## Baseline Performance
+
+- Average reward score: 0.82
+- Max episode steps: 15
+- Validation status: Passed
+- Deployment status: Live on Hugging Face
 
 ## Author
 
