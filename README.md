@@ -18,13 +18,9 @@ https://huggingface.co/spaces/bhagya1234567890/email-triage-openenv
 
 ## Overview
 
-This project simulates a high-stakes, real-world enterprise email triage operation. It transforms raw inbound communication into a deeply analyzable reinforcement learning environment. The AI agent navigates an asynchronous, prioritized inbox evaluating sentiments, detecting hidden deadlines, and deciding swift handling procedures. It serves as both a beautiful product demo and an authentic OpenEnv-compliant evaluation ground.
+This project simulates a real-world enterprise email triage workflow where an AI agent classifies emails, detects urgency, extracts deadlines, recommends actions, and receives structured rewards through the OpenEnv framework.
 
-## Real-World Utility
-
-This project simulates real enterprise email workflows including urgency detection, spam filtering, action recommendation, deadline extraction, and AI-assisted response prioritization.
-
-It is designed as a realistic benchmark environment for evaluating intelligent agents in communication-heavy workflows.
+It is designed as a realistic benchmark for evaluating intelligent agents on communication-heavy enterprise workflows.
 
 ## Features
 
@@ -58,10 +54,11 @@ GET /health
 
 ## Baseline Performance
 
-- Average reward score: 0.82
-- Max episode steps: 15
-- Validation status: Passed
-- Deployment status: Live on Hugging Face
+* Validation Status: Passed
+* Hugging Face Deployment: Live
+* Max Episode Steps: 15
+* Reward Range: 0.0 – 1.0
+* Difficulty Levels: Easy / Medium / Hard
 
 ## Author
 
