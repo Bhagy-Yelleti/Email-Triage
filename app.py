@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
+import os
 
 from fastapi import Body, FastAPI
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from environment import EmailTriageEnv
@@ -22,6 +24,12 @@ def root():
     return {"service": "openenv-email-triage", "status": "ok"}
 
 
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard():
+    with open(os.path.join(os.path.dirname(__file__), "frontend.html"), "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read())
+
+
 @app.get("/health")
 def health():
     return {"status": "healthy", "ok": True}
@@ -39,16 +47,16 @@ def reset_post(payload: ResetBody = Body(default_factory=ResetBody)):
 
 class StepRequest(BaseModel):
     action: int = Field(..., ge=0, le=3)
-
+    category: Optional[str] = None
+    urgency_level: Optional[str] = None
 
 @app.post("/step/{action}")
 def step_path(action: int):
     return env.step(action)
 
-
 @app.post("/step")
 def step_body(payload: StepRequest = Body(...)):
-    return env.step(payload.action)
+    return env.step(payload.action, payload.category, payload.urgency_level)
 
 
 @app.get("/state")
@@ -139,7 +147,14 @@ def schema():
                         "id": {"type": "string"},
                         "sender": {"type": "string"},
                         "subject": {"type": "string"},
-                        "body": {"type": "string"}
+                        "body": {"type": "string"},
+                        "category": {"type": "string"},
+                        "priority_score": {"type": "integer"},
+                        "urgency_level": {"type": "string"},
+                        "sentiment": {"type": "string"},
+                        "deadline_extracted": {"type": ["string", "null"]},
+                        "action_recommendation": {"type": "string"},
+                        "suggested_reply": {"type": ["string", "null"]}
                     }
                 },
                 "current_grader_score": {"type": "number"},

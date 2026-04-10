@@ -1,6 +1,6 @@
 ---
 title: OpenEnv Email Triage
-emoji: "📨"
+emoji: "📬"
 colorFrom: indigo
 colorTo: blue
 sdk: docker
@@ -8,158 +8,92 @@ app_port: 7860
 pinned: false
 ---
 
-# OpenEnv Email Triage Environment
+# Production-Grade Email Assistant Environment
 
-A deterministic, real-world OpenEnv environment for training and evaluating agents on customer email triage workflows. The environment models a realistic operations task: classify urgency, route ownership, and choose safe final handling actions under policy constraints.
+A deterministic, real-world OpenEnv environment for training and evaluating AI agents on advanced email triage workflows. The environment models a realistic operations and personal assistant task: reading complex emails, predicting categories, extracting deadlines, estimating priority, and choosing safe handling actions.
 
-## Why this environment
+## 🌟 Why this is Real-World Useful
 
-Support and operations teams triage thousands of emails daily. Incorrect prioritization or routing delays incident response and impacts users. This environment captures that operational decision loop with measurable outcomes and reproducible scoring.
+Support, operations teams, and individuals triage thousands of emails daily. Understanding the **intent, urgency, and deadlines** within unstructured text is critical for AI assistants to be useful. 
+This environment moves beyond simple keyword matching to full semantic understanding. It captures out-of-band operational workflows with measurable outcomes, rich rewarding, and reproducible deterministic scoring in an OpenEnv-compliant lifecycle setup.
 
-## Environment design
+## 🏗️ OpenEnv Architecture & UI UX Upgrade
 
-- **Domain:** Customer operations and incident triage.
-- **Core API:** `reset()`, `step(action)`, and `state()`.
-- **Typed models:** Pydantic schemas for observation, action, reward signal, and grader output.
-- **Episode boundaries:** Ends on explicit `finalize` action or when max-step budget is reached.
-- **Determinism:** Fixed tasks and deterministic grader logic for reproducible benchmark scores.
+The environment complies fully with the OpenEnv specification (`reset()`, `step(action)`, `state()`, `/schema`) but acts as a fully fleshed out **Production Web Application** deployed via Hugging Face Spaces. 
 
-## Action space
+**Interactive Frontend features:**
+- Clean, modern Inbox sidebar queue
+- Live preview pane simulating email clients
+- Live AI Extraction pane displaying Category, Score, Urgency, Extracted Deadlines.
+- Auto-Responder drafts for context-heavy emails (e.g. meetings, offers).
+- Analytics summary cards tracking overall episodes score.
 
-Action payload (JSON):
+*(Imagine screenshot here showcasing the polished 3-pane dashboard with badges and AI extraction info)*
 
+## 📥 Dataset & Task Difficulty Progression
+
+The environment processes a curated subset of 8-10 demo emails across 3 varied difficulty levels:
+
+1. **Easy** (`email-easy-001`): Obvious bank frauds, simple newsletter spams, and straightforward "URGENT" server-down warnings.
+2. **Medium** (`email-medium-001`): Ambiguous project deadline extensions, standard HR benefit enrollments.
+3. **Hard** (`email-hard-001`): Phishing scams disguised as IT passwords resets, subtle internship confirmation deadlines, unstructured vendor outreach.
+
+## 🎮 Observation & Action Space
+
+**Observation Space (State representation):**
+At each step, agents are served the `current_email` object containing `sender`, `subject`, `body`, as well as environment tracking counts. In the UI, the environment also enriches output with deterministic semantic analysis (`deadline_extracted`, `sentiment`, `suggested_reply`).
+
+**Action Space Payload:**
 ```json
 {
-  "kind": "set_priority | set_team | set_action | add_note | finalize",
-  "value": "string"
+  "action": 2, 
+  "category": "work",
+  "urgency_level": "medium"
 }
 ```
+*Where action is an integer {0=mark_urgent, 1=archive, 2=reply, 3=mark_spam}.*
 
-### Supported values
+## 🏆 Advanced Reward Logic Explanation
 
-- `set_priority`: `low | medium | high | critical`
-- `set_team`: `support | finance | security | engineering | compliance`
-- `set_action`: `respond | escalate | defer | close`
+Dense rewards have been added without breaking the `[0.0, 1.0]` API requirement:
+- **+0.2** for correctly extracting and identifying the email category.
+- **+0.3** for accurately identifying the `urgency_level`.
+- **+0.5** for selecting the exact correct routing action (Spam, Reply, Archive, Urgent).
+- **-0.2 Penalty** for incorrectly classifying valid emails as Spam or repeating actions unnecessarily.
 
-## Observation space
+This rich partial reward structure ensures the RL agent gets meaningful gradients early in the learning process by validating its intermediate cognitive steps (e.g. understanding it's a 'finance' category even if it incorrectly 'archives' instead of 'replying' to a refund).
 
-Each step returns:
+## 🚀 Future Scope
 
-- task metadata (`task_id`, `difficulty`)
-- input email (`email_subject`, `email_body`)
-- constraints and policy notes
-- current prediction state (`predicted_priority`, `predicted_team`, `predicted_action`)
-- partial score (`partial_score`) and trajectory status (`step_count`, `max_steps`)
+- Integrating a multi-action step where the agent drafts the reply email string.
+- Connecting to live IMAP configurations.
+- More adversarial evaluations introducing prompt injections in email bodies.
 
-## Tasks and difficulty progression
+---
 
-1. **Easy** (`email-easy-001`)  
-   Password reset lockout before customer demo.
-2. **Medium** (`email-medium-001`)  
-   Duplicate enterprise billing charge requiring finance escalation.
-3. **Hard** (`email-hard-001`)  
-   Potential data exfiltration incident with PII risk.
-
-## Grader and scoring
-
-Each episode gets a deterministic score in `[0.0, 1.0]`:
-
-- Priority correctness: 35%
-- Team routing correctness: 30%
-- Final action correctness: 25%
-- Efficiency bonus: 10%
-- Safety/format penalties are subtracted and clipped
-
-Pass threshold: `score >= 0.80`.
-
-## Reward shaping
-
-Dense reward includes:
-
-- partial positive signal for each correct decision dimension
-- stronger reward for correct terminal configuration
-- efficiency signal for shorter valid trajectories
-- penalties for invalid or malformed actions
-
-This avoids sparse binary feedback and provides useful gradient for policy learning.
-
-## Local setup
+## 🛠️ Run environment locally
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+source .venv/bin/activate
 pip install -r requirements.txt
+uvicorn app:app --host 0.0.0.0 --port 7860
 ```
+Open `http://localhost:7860/dashboard` to view the UI.
 
-## Run environment locally
+## 🤖 Baseline inference
 
 ```bash
-uvicorn src.app:app --host 0.0.0.0 --port 7860
-```
-
-Health check:
-
-```bash
-curl http://localhost:7860/health
-```
-
-## Run baseline inference
-
-Set required variables:
-
-- `API_BASE_URL` (LLM API endpoint)
-- `MODEL_NAME` (model identifier)
-- `HF_TOKEN` (API key)
-
-Optional:
-
-- `OPENAI_API_KEY` (fallback key source)
-- `ENV_BASE_URL` (environment endpoint, default `http://localhost:7860`)
-
-Run:
-
-```bash
+export API_BASE_URL="..."
+export MODEL_NAME="..."
+export HF_TOKEN="..."
 python inference.py
 ```
+Outputs strictly adhere to the OpenEnv output requirements: `[START]`, `[STEP]`, `[END]`.
 
-The script emits structured logs in strict format:
-
-- `[START] ...`
-- `[STEP] step=... action=... reward=... done=... error=...`
-- `[END] success=... steps=... score=... rewards=...`
-
-## Docker
-
+## 📦 Docker & Spec Testing
 ```bash
 docker build -t openenv-email-triage .
 docker run --rm -p 7860:7860 openenv-email-triage
-```
-
-## OpenEnv metadata and validation
-
-- Metadata file: `openenv.yaml`
-- Validate locally (if installed):
-
-```bash
 openenv validate
 ```
-
-## Suggested Hugging Face Space deployment
-
-1. Create a **Docker Space**.
-2. Push this repository.
-3. Set Space secrets:
-   - `API_BASE_URL`
-   - `MODEL_NAME`
-   - `HF_TOKEN`
-   - optional `OPENAI_API_KEY`
-4. Verify:
-   - `GET /health` returns 200
-   - `POST /reset` returns valid episode object
-
-## Baseline reproducibility notes
-
-- Tasks are fixed and deterministic.
-- Graders are deterministic and bounded in `[0.0, 1.0]`.
-- Inference uses low-temperature generation and a deterministic fallback policy.
-

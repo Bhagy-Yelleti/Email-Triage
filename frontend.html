@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenEnv Email Triage Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f3f4f6;
+            --surface-color: #ffffff;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --primary: #3b82f6;
+            --border: #e5e7eb;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --gray: #9ca3af;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: var(--surface-color);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stats-container {
+            display: flex;
+            gap: 1rem;
+            padding: 1.5rem;
+            justify-content: space-between;
+        }
+
+        .stat-card {
+            background: var(--surface-color);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-card span {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card strong {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            padding: 0 1.5rem 1.5rem 1.5rem;
+            gap: 1.5rem;
+        }
+
+        .sidebar {
+            width: 30%;
+            background: var(--surface-color);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+        }
+
+        .email-list {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .email-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .email-item:hover {
+            background: #f9fafb;
+        }
+
+        .email-item.active {
+            background: #eff6ff;
+            border-left: 4px solid var(--primary);
+        }
+
+        .email-sender {
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .email-subject {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .preview-pane {
+            flex: 1;
+            background: var(--surface-color);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .email-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .email-header h2 {
+            margin-bottom: 0.5rem;
+        }
+
+        .email-meta {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge.urgent { background-color: #fee2e2; color: var(--danger); }
+        .badge.high { background-color: #fee2e2; color: var(--danger); }
+        .badge.medium { background-color: #fef3c7; color: var(--warning); }
+        .badge.low { background-color: #d1fae5; color: var(--success); }
+        .badge.spam { background-color: #f3f4f6; color: var(--gray); }
+        .badge.work { background-color: #e0e7ff; color: #4f46e5; }
+        .badge.finance { background-color: #cffafe; color: #0891b2; }
+
+        .email-body {
+            line-height: 1.6;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .ai-suggestions {
+            margin-top: 2rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .ai-suggestions h3 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .suggestion-box {
+            background: white;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        button {
+            padding: 0.5rem 1.5rem;
+            border-radius: 6px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .btn-reply { background: var(--primary); color: white; }
+        .btn-archive { background: var(--success); color: white; }
+        .btn-urgent { background: var(--danger); color: white; }
+        .btn-spam { background: var(--gray); color: white; }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid var(--primary);
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h2>📬 Email Triage Environment</h2>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <select id="taskSelect" style="padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border);">
+                <option value="email-easy-001">Easy Task</option>
+                <option value="email-medium-001">Medium Task</option>
+                <option value="email-hard-001">Hard Task</option>
+            </select>
+            <button onclick="resetEnv()" style="background:var(--surface-color); border:1px solid var(--border); color:var(--text-primary)">Reset API</button>
+            <div class="spinner" id="spinner"></div>
+        </div>
+    </header>
+
+    <div class="stats-container">
+        <div class="stat-card"><span>Total Remaining</span><strong id="stat-total">0</strong></div>
+        <div class="stat-card"><span>Steps Taken</span><strong id="stat-steps">0</strong></div>
+        <div class="stat-card"><span>Current Score</span><strong id="stat-score">0.00</strong></div>
+        <div class="stat-card"><span>Max Steps</span><strong id="stat-max">20</strong></div>
+    </div>
+
+    <div class="main-content">
+        <div class="sidebar">
+            <div class="sidebar-header">Inbox Queue</div>
+            <div class="email-list" id="emailList">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+
+        <div class="preview-pane" id="previewPane">
+            <div class="empty-state">
+                <h3 style="margin-bottom: 0.5rem;">No active email</h3>
+                <p>Click "Reset API" to load the environment.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentState = null;
+
+        async function fetchState() {
+            setLoading(true);
+            try {
+                const res = await fetch('/state');
+                const data = await res.json();
+                
+                // Fetch observation separately just to get the current email details
+                const obsRes = await fetch('/reset', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({task_id: data.task_id})
+                });
+                const obsData = await obsRes.json();
+                
+                updateUI(obsData);
+            } catch (e) {
+                console.error(e);
+            }
+            setLoading(false);
+        }
+
+        async function resetEnv() {
+            setLoading(true);
+            const taskId = document.getElementById('taskSelect').value;
+            try {
+                const res = await fetch('/reset', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({task_id: taskId})
+                });
+                const data = await res.json();
+                updateUI(data);
+            } catch (e) {
+                console.error(e);
+            }
+            setLoading(false);
+        }
+
+        async function performAction(actionId) {
+            setLoading(true);
+            try {
+                const email = currentState.current_email;
+                const payload = { 
+                    action: actionId,
+                    category: email ? email.category : null,
+                    urgency_level: email ? email.urgency_level : null
+                };
+                
+                const res = await fetch('/step', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                updateUI(data.state);
+            } catch (e) {
+                console.error(e);
+            }
+            setLoading(false);
+        }
+
+        function updateUI(obs) {
+            currentState = obs;
+            
+            // Update Stats
+            document.getElementById('stat-total').innerText = obs.emails_remaining;
+            document.getElementById('stat-steps').innerText = obs.steps_taken;
+            document.getElementById('stat-score').innerText = obs.current_grader_score ? obs.current_grader_score.toFixed(2) : '0.00';
+            document.getElementById('stat-max').innerText = obs.max_steps;
+
+            // Update Email List
+            const listEl = document.getElementById('emailList');
+            if (obs.current_email) {
+                listEl.innerHTML = `
+                    <div class="email-item active">
+                        <div class="email-sender">${obs.current_email.sender}</div>
+                        <div class="email-subject">${obs.current_email.subject}</div>
+                    </div>
+                `;
+            } else {
+                listEl.innerHTML = `<div style="padding:1rem;color:var(--text-secondary);text-align:center;">Inbox zero! 🎉</div>`;
+            }
+
+            // Update Preview Pane
+            const paneEl = document.getElementById('previewPane');
+            if (obs.current_email) {
+                const e = obs.current_email;
+                let aiBox = '';
+                if (e.action_recommendation || e.suggested_reply) {
+                    aiBox = `
+                        <div class="ai-suggestions">
+                            <h3>✨ AI Intelligence</h3>
+                            <div style="display:flex; gap:1rem; margin-bottom:1rem;">
+                                <div><strong>Recommendation:</strong> ${e.action_recommendation}</div>
+                                <div><strong>Extracted Deadline:</strong> ${e.deadline_extracted || 'None'}</div>
+                                <div><strong>Sentiment:</strong> ${e.sentiment}</div>
+                            </div>
+                            ${e.suggested_reply ? `
+                                <div class="suggestion-box">
+                                    <strong>Suggested Reply:</strong><br/>
+                                    ${e.suggested_reply}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+
+                paneEl.innerHTML = `
+                    <div class="email-header">
+                        <h2>${e.subject}</h2>
+                        <div class="email-meta">
+                            <span>From: <strong>${e.sender}</strong></span>
+                        </div>
+                        <div class="badges">
+                            <span class="badge ${e.urgency_level}">${e.urgency_level} priority</span>
+                            <span class="badge ${e.category}">${e.category}</span>
+                            <span class="badge" style="background:#f3f4f6; color:#374151">Score: ${e.priority_score}/10</span>
+                        </div>
+                    </div>
+                    
+                    <div class="email-body">
+                        ${e.body}
+                    </div>
+
+                    ${aiBox}
+
+                    <div class="action-buttons">
+                        <button class="btn-reply" onclick="performAction(2)">Reply</button>
+                        <button class="btn-archive" onclick="performAction(1)">Archive</button>
+                        <button class="btn-urgent" onclick="performAction(0)">Flag Urgent</button>
+                        <button class="btn-spam" onclick="performAction(3)">Mark Spam</button>
+                    </div>
+                `;
+            } else {
+                paneEl.innerHTML = `
+                    <div class="empty-state">
+                        <h3 style="margin-bottom: 0.5rem;">All caught up!</h3>
+                        <p>Score: ${obs.current_grader_score ? obs.current_grader_score.toFixed(2) : '-'}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function setLoading(isLoading) {
+            document.getElementById('spinner').style.display = isLoading ? 'block' : 'none';
+        }
+
+        // Init
+        resetEnv();
+    </script>
+</body>
+</html>

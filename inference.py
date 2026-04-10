@@ -25,22 +25,31 @@ SYSTEM_PROMPT = (
     "At each step, you will be given the current email (sender, subject, body). "
     "Choose ONE action as an integer in {0,1,2,3} only: "
     "0=mark as urgent, 1=archive, 2=reply, 3=mark spam. "
-    "Return a JSON object with exactly one key: 'action'."
+    "Also predict the 'category' (work/personal/finance/promotions/spam/urgent) "
+    "and 'urgency_level' (low/medium/high). "
+    "Return a JSON object with keys: 'action', 'category', 'urgency_level'."
 )
 
 
-def _parse_action(text: str) -> int:
+def _parse_action(text: str) -> Dict[str, Any]:
     text = (text or "").strip()
+    result = {"action": 2, "category": None, "urgency_level": None}
     try:
         data = json.loads(text)
-        if isinstance(data, dict) and "action" in data:
-            return int(data["action"])
+        if isinstance(data, dict):
+            if "action" in data:
+                result["action"] = int(data["action"])
+            if "category" in data:
+                result["category"] = str(data["category"])
+            if "urgency_level" in data:
+                result["urgency_level"] = str(data["urgency_level"])
+            return result
     except Exception:
         pass
-    m = re.search(r"\d+", text)
-    if not m:
-        return 2
-    return int(m.group(0))
+    m = re.search(r'"action"\s*:\s*(\d+)', text) or re.search(r'\d+', text)
+    if m:
+        result["action"] = int(m.group(1) if m.groups() else m.group(0))
+    return result
 
 
 def _post(path: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -71,11 +80,11 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
     )
 
 
-def get_model_action(client: OpenAI, step: int, state: Dict[str, Any]) -> int:
+def get_model_action(client: OpenAI, step: int, state: Dict[str, Any]) -> Dict[str, Any]:
     user_prompt = (
         f"Step: {step}\n"
         f"State: {json.dumps(state, separators=(',', ':'))}\n"
-        "Return JSON with action in {0,1,2,3}."
+        "Return JSON with action in {0,1,2,3} and optional predicted category/urgency_level."
     )
     try:
         completion = client.chat.completions.create(
@@ -91,7 +100,7 @@ def get_model_action(client: OpenAI, step: int, state: Dict[str, Any]) -> int:
         content = (completion.choices[0].message.content or "").strip()
         return _parse_action(content)
     except Exception:
-        return 2  # default: reply action
+        return {"action": 2, "category": None, "urgency_level": None}
 
 
 def run_episode(client: OpenAI, task_id: str) -> List[float]:
@@ -113,11 +122,17 @@ def run_episode(client: OpenAI, task_id: str) -> List[float]:
         action = 2
 
         try:
-            action = get_model_action(client, step, state)
+            model_out = get_model_action(client, step, state)
+            action = model_out.get("action", 2)
             if action not in {0, 1, 2, 3}:
                 action = 2
 
-            result = _post("/step", {"action": action})
+            payload = {
+                "action": action,
+                "category": model_out.get("category"),
+                "urgency_level": model_out.get("urgency_level"),
+            }
+            result = _post("/step", payload)
             state = result.get("state", result)
             reward = float(result.get("reward", 0.0))
             done = bool(result.get("done", False))
