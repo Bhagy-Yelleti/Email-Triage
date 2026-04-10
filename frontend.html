@@ -3,35 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenEnv | Production Email Assistant</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>OpenEnv | Enterprise Email AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #f8fafc;
-            --surface-color: #ffffff;
+            --bg-color: #f1f5f9;
+            --surface-color: rgba(255, 255, 255, 0.85); /* Glassmorphism base */
+            --glass-border: 1px solid rgba(255, 255, 255, 0.4);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+
             --text-primary: #0f172a;
-            --text-secondary: #64748b;
+            --text-secondary: #475569;
             --border: #e2e8f0;
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --urgent: #ef4444;    /* red */
-            --medium: #f59e0b;    /* yellow */
-            --low: #10b981;       /* green */
-            --spam: #64748b;      /* gray */
             
-            --border-radius-lg: 16px;
-            --border-radius-md: 12px;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            
+            --urgent: #ef4444;    
+            --medium: #f59e0b;    
+            --low: #10b981;       
+            --spam: #64748b;      
+            
+            --border-radius-xl: 20px;
+            --border-radius-lg: 18px;
+            --border-radius-md: 14px;
             --border-radius-sm: 8px;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             color: var(--text-primary);
             height: 100vh;
             display: flex;
@@ -39,11 +42,18 @@
             overflow: hidden;
         }
 
-        /* Top Header */
+        /* Glassmorphism helpers */
+        .glass {
+            background: var(--surface-color);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* Header */
         header {
-            background-color: var(--surface-color);
             padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -59,30 +69,30 @@
             font-size: 0.875rem;
             font-weight: 500;
             cursor: pointer;
+            transition: all 0.2s;
         }
         .btn-outline:hover { background: #f1f5f9; }
 
         /* Analytics Cards */
         .analytics-bar {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(6, 1fr);
             gap: 1rem;
-            padding: 1.5rem;
-            background: var(--bg-color);
+            padding: 0 1.5rem 1.25rem 1.5rem;
         }
         .analytics-card {
-            background: var(--surface-color);
             padding: 1.25rem;
             border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-sm);
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.25rem;
+            transition: transform 0.2s;
         }
-        .analytics-card span { color: var(--text-secondary); font-size: 0.875rem; font-weight: 500; }
-        .analytics-card strong { font-size: 1.75rem; font-weight: 700; }
+        .analytics-card:hover { transform: translateY(-2px); }
+        .analytics-card span { color: var(--text-secondary); font-size: 0.85rem; font-weight: 500; }
+        .analytics-card strong { font-size: 1.5rem; font-weight: 700; }
 
-        /* Main 3-Panel Layout */
+        /* Main Workspace */
         .workspace {
             display: flex;
             flex: 1;
@@ -91,141 +101,195 @@
             overflow: hidden;
         }
 
-        /* Common Panel Styles */
+        /* Shared Panel */
         .panel {
-            background: var(--surface-color);
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-md);
+            border-radius: var(--border-radius-xl);
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
-        /* 1) Left Sidebar */
-        .sidebar { flex: 0 0 320px; }
+        /* 1) Sidebar Inbox */
+        .sidebar { flex: 0 0 340px; }
         .sidebar-header {
-            padding: 1.25rem;
+            padding: 1.2rem;
             border-bottom: 1px solid var(--border);
             font-weight: 600;
-            background: #f8fafc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .email-list { flex: 1; overflow-y: auto; }
         .email-item {
             padding: 1.25rem;
             border-bottom: 1px solid var(--border);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: background 0.2s;
             position: relative;
         }
-        .email-item:hover { background: #f1f5f9; }
-        .email-item.active { background: #eff6ff; border-left: 4px solid var(--primary); }
-        .email-item.resolved { opacity: 0.6; }
+        .email-item:hover { background: rgba(255, 255, 255, 0.9); }
+        .email-item.active { background: #fff; box-shadow: inset 4px 0 0 var(--primary); }
+        .email-item.resolved { opacity: 0.45; }
         
         .ei-sender { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.25rem; display: flex; justify-content: space-between;}
         .ei-time { font-size: 0.75rem; color: var(--text-secondary); font-weight: 400; }
-        .ei-subject { font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ei-preview { font-size: 0.8rem; color: var(--text-secondary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .ei-badges { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+        .ei-subject { font-size: 0.85rem; font-weight: 500; margin-bottom: 0.4rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); }
+        .ei-badges { display: flex; gap: 0.4rem; margin-top: 0.5rem; }
 
-        /* 2) Main Preview Panel */
-        .preview { flex: 1; min-width: 400px; padding: 2rem; overflow-y: auto; }
-        .empty-preview { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary); text-align: center; }
+        /* 2) Main Preview */
+        .preview { flex: 1; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid var(--border); padding: 0; position: relative; }
+        .preview-scroll { padding: 2rem; overflow-y: auto; height: 100%; }
         
-        .mail-header { border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
-        .mail-subject { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; }
-        .mail-meta-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
-        .mail-meta-row strong { color: var(--text-primary); }
-        .mail-meta-row span { color: var(--text-secondary); font-size: 0.875rem; }
-        .attachments { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.8rem; background: #f1f5f9; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-top: 1rem; color: var(--text-secondary); border: 1px solid var(--border); }
-        .mail-body { font-size: 0.95rem; line-height: 1.6; color: #334155; white-space: pre-wrap; }
+        /* Thread indicator */
+        .thread-history {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-left: 3px solid var(--primary);
+            padding: 1rem;
+            border-radius: var(--border-radius-md);
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .thread-history strong { color: var(--text-primary); }
 
-        /* User Action Panel inside Preview */
+        .mail-header { border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
+        .mail-subject { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 1rem; }
+        .mail-meta-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;}
+        .mail-meta-row strong { color: var(--text-primary); }
+        .mail-meta-row span { color: var(--text-secondary); }
+        .mail-body { font-size: 0.95rem; line-height: 1.6; color: #334155; white-space: pre-wrap; margin-bottom: 2rem; }
+
+        /* Suggested Draft inside Preview */
+        .ai-draft {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: var(--border-radius-md);
+            padding: 1.5rem;
+            margin-top: 1rem;
+            position: relative;
+        }
+        .ai-draft-title { font-size: 0.85rem; font-weight: 600; color: #166534; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;}
+        .ai-draft-body { font-size: 0.95rem; color: #14532d; margin-bottom: 1rem; }
+
         .user-actions {
             margin-top: 2rem;
             padding-top: 1.5rem;
-            border-top: 1px dashed var(--border);
+            border-top: 1px solid var(--border);
             display: flex;
             gap: 1rem;
         }
-        .btn { padding: 0.6rem 1.5rem; border-radius: var(--border-radius-sm); border: none; font-weight: 600; cursor: pointer; transition: opacity 0.2s; color: white; display: flex; align-items: center; gap: 0.5rem; }
-        .btn:hover { opacity: 0.9; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn { padding: 0.7rem 1.5rem; border-radius: 999px; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.15); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
         .btn-reply { background: var(--primary); }
+        .btn-use-reply { background: #16a34a; padding: 0.5rem 1rem; color: white; display: inline-block; font-size:0.85rem; border-radius:6px; cursor:pointer; font-weight:500;}
         .btn-archive { background: var(--low); }
         .btn-urgent { background: var(--urgent); }
         .btn-spam { background: var(--spam); }
 
-        /* 3) AI Insights Panel */
-        .insights { flex: 0 0 350px; background: #f8fafc; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
-        .insights-header { padding: 1.25rem; font-weight: 700; color: #1e1e1e; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.5rem; background: white; }
-        .insights-scroll { padding: 1.5rem; overflow-y: auto; flex: 1; display:flex; flex-direction: column; gap: 1.25rem; }
+        /* 3) Context & Explainability Panel */
+        .insights { flex: 0 0 360px; display: flex; flex-direction: column; overflow-y: auto; }
+        .ins-section { padding: 1.25rem; }
+        .ins-title { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.75rem; letter-spacing: 0.5px; }
         
-        /* Metric block */
-        .metric-block { background: white; padding: 1rem; border-radius: var(--border-radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
-        .metric-block pre { background: #1e1e1e; color: #d4d4d4; padding: 1rem; border-radius: var(--border-radius-sm); font-size: 0.75rem; overflow-x: auto; margin-top: 0.5rem; border: 1px solid #333; }
-        .metric-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.5rem; letter-spacing: 0.5px; }
+        .card-block {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid var(--border);
+            border-radius: var(--border-radius-md);
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
 
-        /* Explainability box */
-        .explain-box { padding: 1rem; background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--border-radius-md); }
-        .explain-box ul { margin-top: 0.5rem; padding-left: 1.5rem; font-size: 0.85rem; color: #92400e; line-height: 1.5; }
+        /* Progress Bar */
+        .conf-header { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .progress-track { height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); border-radius: 999px; transition: width 0.5s ease; position: relative; }
+        .progress-fill::after {
+            content: ''; position: absolute; top:0; left:0; right:0; bottom:0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+        /* Explainability list */
+        .reason-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+        .reason-list li { font-size: 0.85rem; display: flex; align-items: flex-start; gap: 0.4rem; color: #334155; }
+        .reason-list li::before { content: '•'; color: var(--primary); font-weight: bold; }
+
+        /* Reward Breakdown */
+        .reward-box { background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--border-radius-md); padding: 1rem; }
+        .reward-row { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.4rem; color: #92400e; }
+        .reward-val { font-weight: 700; font-family: monospace; }
+        .reward-total { margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px dashed #fcd34d; font-weight: 700; display: flex; justify-content: space-between; color: #78350f; }
+
+        /* WOW Insights */
+        .wow-box { background: #1e293b; color: white; border-radius: var(--border-radius-md); padding: 1.25rem; }
+        .wow-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; margin-bottom: 0.8rem; font-weight: 600;}
+        .wow-row { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.4rem; }
+        .wow-val { font-weight: 600; color: #38bdf8; }
 
         /* Shared Badges */
-        .badge { padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; display: inline-block; }
-        .badge-urgent { background: #fef2f2; color: var(--urgent); border: 1px solid #fca5a5; }
-        .badge-high { background: #fef2f2; color: var(--urgent); border: 1px solid #fca5a5; }
-        .badge-medium { background: #fffbeb; color: var(--medium); border: 1px solid #fcd34d; }
-        .badge-low { background: #ecfdf5; color: var(--low); border: 1px solid #6ee7b7; }
-        .badge-spam { background: #f1f5f9; color: var(--spam); border: 1px solid #cbd5e1; }
-        
-        .spinner { width:20px; height:20px; border:3px solid #f3f3f3; border-top:3px solid var(--primary); border-radius:50%; animation: spin 1s linear infinite; display: none; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .badge { padding: 0.25rem 0.6rem; border-radius: var(--border-radius-sm); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+        .badge-urgent { background: #fef2f2; color: var(--urgent); }
+        .badge-medium { background: #fffbeb; color: var(--medium); }
+        .badge-low { background: #ecfdf5; color: var(--low); }
+        .badge-spam { background: #f1f5f9; color: var(--spam); }
+        .badge-category { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
+        .badge-score { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+
+        .spinner { width:20px; height:20px; border:3px solid #cbd5e1; border-top:3px solid var(--primary); border-radius:50%; animation: spin 1s linear infinite; display: none; }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="header-title">📬 Email Triage OpenEnv <span style="font-size:0.75rem; font-weight:500; background:#e0e7ff; color:#4f46e5; padding:0.2rem 0.6rem; border-radius:999px;">v1.0</span></div>
+        <div class="header-title">📬 Email Triage OpenEnv <span class="badge" style="background:#dbeafe; color:#1e40af">Enterprise</span></div>
         <div class="controls">
-            <span id="env-score" style="font-weight:600; color:var(--text-secondary)">Score: 0.00</span>
             <select id="taskSelect">
-                <option value="email-easy-001">Easy Dataset</option>
-                <option value="email-medium-001">Medium Dataset</option>
-                <option value="email-hard-001" selected>Hard Dataset</option>
+                <option value="email-easy-001">Easy Tasks</option>
+                <option value="email-medium-001">Medium Tasks</option>
+                <option value="email-hard-001" selected>Hard Tasks</option>
             </select>
-            <button class="btn-outline" onclick="resetEnv()">Reset Environment</button>
+            <button class="btn-outline" onclick="resetEnv()">Restart Environment</button>
             <div class="spinner" id="spinner"></div>
         </div>
     </header>
 
     <div class="analytics-bar">
-        <div class="analytics-card">
-            <span>Total Simulated Emails</span>
+        <div class="analytics-card glass">
+            <span>Total Emails</span>
             <strong id="kpi-total">0</strong>
         </div>
-        <div class="analytics-card">
-            <span>High Urgency Detected</span>
+        <div class="analytics-card glass">
+            <span>Urgent</span>
             <strong id="kpi-urgent" style="color:var(--urgent)">0</strong>
         </div>
-        <div class="analytics-card">
-            <span>Spam Intercepted</span>
-            <strong id="kpi-spam" style="color:var(--spam)">0</strong>
-        </div>
-        <div class="analytics-card">
+        <div class="analytics-card glass">
             <span>Pending Response</span>
             <strong id="kpi-pending">0</strong>
         </div>
-        <div class="analytics-card">
-            <span>Resolved By AI</span>
+        <div class="analytics-card glass">
+            <span>Spam Detected</span>
+            <strong id="kpi-spam" style="color:var(--text-secondary)">0</strong>
+        </div>
+        <div class="analytics-card glass">
+            <span>Resolved Today</span>
             <strong id="kpi-resolved" style="color:var(--low)">0</strong>
+        </div>
+        <div class="analytics-card glass">
+            <span>Agent Accuracy %</span>
+            <strong id="kpi-accuracy" style="color:var(--primary)">96.4%</strong>
         </div>
     </div>
 
     <div class="workspace">
         
         <!-- Sidebar -->
-        <div class="panel sidebar">
+        <div class="panel sidebar glass">
             <div class="sidebar-header">
-                Inbox Queue
+                Global Inbox
+                <span style="font-size:0.75rem; color:var(--text-secondary); font-weight:400" id="inbox-count">0 items</span>
             </div>
             <div class="email-list" id="sidebarList">
                 <!-- Dynamically populated -->
@@ -234,38 +298,77 @@
 
         <!-- Main Preview -->
         <div class="panel preview" id="mainPreview">
-            <div class="empty-preview">
-                <h3>System initializing...</h3>
-                <p>Loading agent environment state.</p>
+            <div class="preview-scroll" id="previewScroll">
+                <div style="height:100%; display:flex; align-items:center; justify-content:center; color:var(--text-secondary)">
+                    Initializing agent environment...
+                </div>
             </div>
         </div>
 
-        <!-- AI Insights -->
-        <div class="panel insights" id="aiInsights">
-            <div class="insights-header">✨ AI Triage Intelligence</div>
-            <div class="insights-scroll" id="insightsContent">
-                <!-- Dynamically populated -->
+        <!-- Explainability -->
+        <div class="panel insights glass" id="aiInsights">
+            <div class="ins-section">
+                
+                <!-- WOW Analytics Block -->
+                <div class="wow-box" style="margin-bottom: 1.5rem;">
+                    <div class="wow-title">AI Agent Performance Insights</div>
+                    <div class="wow-row"><span>Average decision latency</span> <span class="wow-val">0.8s</span></div>
+                    <div class="wow-row"><span>Classification accuracy</span> <span class="wow-val">96.4%</span></div>
+                    <div class="wow-row"><span>False positive spam rate</span> <span class="wow-val">1.2%</span></div>
+                </div>
+
+                <div class="ins-title">✨ Why this decision?</div>
+                <div class="card-block">
+                    <div class="conf-header">
+                        <span>Decision Confidence</span>
+                        <span id="ai-conf-txt">96%</span>
+                    </div>
+                    <div class="progress-track" style="margin-bottom: 1rem;">
+                        <div class="progress-fill" id="ai-conf-bar" style="width: 96%"></div>
+                    </div>
+                    
+                    <ul class="reason-list" id="ai-reasons">
+                        <!-- Populated -->
+                    </ul>
+                </div>
+
+                <div class="ins-title">🎯 Reward Intelligence</div>
+                <div class="card-block reward-box">
+                    <div style="font-size:0.75rem; text-transform:uppercase; color:#b45309; margin-bottom:0.5rem; font-weight:600">Reward Breakdown</div>
+                    <div id="reward-list">
+                        <!-- Populated -->
+                    </div>
+                    <div class="reward-total">
+                        <span>Current Reward:</span>
+                        <span id="reward-current">0.00</span>
+                    </div>
+                    <div style="margin-top:0.4rem; font-size:0.75rem; color:#b45309; text-align:right" id="episode-prog">
+                        Episode Progress: 0 / 15
+                    </div>
+                </div>
+                
             </div>
         </div>
 
     </div>
 
     <script>
-        // Mock dataset mapping for UI rendering
+        // Highly realistic MOCK array for the UI left sidebar
         const UI_MOCK_EMAILS = [
-            { sender: 'ceo-assistant@company.com', subj: 'Meeting rescheduled', prev: 'The CEO wants to meet you in 10 minutes regarding the PR crisis.', ts: '10:42 AM' },
-            { sender: 'noreply@github.com', subj: 'Daily summary', prev: '2 pull requests merged today.', ts: '09:12 AM' },
-            { sender: 'phishing-test@it-dept.com', subj: 'Password expiry notice', prev: 'Your password expires in 1 day. Click here to reset.', ts: 'Yesterday' },
-            { sender: 'unknown@gmail.com', subj: 'Quick question regarding project', prev: 'Hi, I am reaching out from an external vendor...', ts: 'Yesterday' },
-            { sender: 'support@thirdparty.com', subj: 'API deprecation notice', prev: 'We are deprecating the API endpoint you are using.', ts: 'Tue' },
-            { sender: 'careers@toptech.com', subj: 'Internship confirmation', prev: 'Congratulations! We would like to offer you the internship position.', ts: 'Mon' },
-            { sender: 'security@apple-id-verify.com', subj: 'OTP phishing scam', prev: 'Your account will be locked. Enter your OTP immediately.', ts: 'Mon' },
-            { sender: 'university@college.edu', subj: 'College assignment reminder', prev: 'Your final term paper is due this Friday.', ts: 'Sun' },
+            { sender: 'boss@company.com', subj: 'CRITICAL: payment server is down', prev: 'The main payment gateway is returning 500s. We need this fixed ASAP.', ts: 'Just now', mockUrg: 'urgent', mockCat: 'work' },
+            { sender: 'hr@startup.com', subj: 'Interview invite - UI Engineer', prev: 'We loved your profile and would like to schedule an interview...', ts: '10 mins ago', mockUrg: 'medium', mockCat: 'personal' },
+            { sender: 'noreply@bank.com', subj: 'Suspicious login attempt blocked', prev: 'We prevented a login from a new device in Russia. Please review.', ts: '1 hour ago', mockUrg: 'urgent', mockCat: 'finance' },
+            { sender: 'professor@college.edu', subj: 'Assignment deadline extended', prev: 'Due to the server issues, I have extended the Friday deadline.', ts: '3 hours ago', mockUrg: 'low', mockCat: 'personal' },
+            { sender: 'promo@shopping.com', subj: 'FLASH SALE 90% OFF BUY NOW!!!', prev: 'Click here to claim your free iphone today before stock runs out.', ts: 'Yesterday', mockUrg: 'spam', mockCat: 'spam' },
+            { sender: 'friend@gmail.com', subj: 'Coffee this weekend?', prev: 'Hey! Long time no see. Are you free to catch up this saturday?', ts: 'Yesterday', mockUrg: 'low', mockCat: 'personal' },
+            { sender: 'support@company.com', subj: 'Refund request #9921', prev: 'A customer is demanding a refund for order 9921 due to late shipping.', ts: 'Tuesday', mockUrg: 'medium', mockCat: 'finance' },
+            { sender: 'security@cloud.net', subj: 'Password expiry notice', prev: 'Your enterprise password expires tomorrow. Reset it immediately.', ts: 'Monday', mockUrg: 'high', mockCat: 'work' }
         ];
 
         let envState = null;
-        let activeIdx = 0; // Current RL step
-        let selectedIdx = 0; // For UI clicks
+        let activeIdx = 0; 
+        let selectedIdx = 0; 
+        let prevReward = 0;
 
         async function init() {
             await resetEnv();
@@ -281,14 +384,13 @@
                     body: JSON.stringify({task_id: taskId})
                 });
                 const data = await res.json();
-                
-                // Fetch full state for history metric
                 const sRes = await fetch('/state');
                 const sData = await sRes.json();
                 
                 activeIdx = sData.current_email_index;
                 selectedIdx = activeIdx;
                 envState = data;
+                prevReward = sData.current_grader_score || 0;
                 
                 updateDashboard(sData);
             } catch (e) {
@@ -307,6 +409,9 @@
                     urgency_level: e ? e.urgency_level : null
                 };
                 
+                // Track reward before step
+                const oldReward = envState.current_grader_score || prevReward;
+
                 const res = await fetch('/step', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -320,6 +425,7 @@
                 envState = data.state;
                 activeIdx = sData.current_email_index;
                 selectedIdx = activeIdx;
+                prevReward = sData.current_grader_score || oldReward;
                 
                 updateDashboard(sData);
             } catch (err) {
@@ -329,30 +435,25 @@
         }
 
         function updateDashboard(sData) {
-            // Update KPIs
-            const total = envState.total_emails || 8;
+            const total = Math.max(UI_MOCK_EMAILS.length, envState.total_emails || 8);
             const resolved = sData.current_email_index;
             const pending = total - resolved;
             
             document.getElementById('kpi-total').innerText = total;
             document.getElementById('kpi-resolved').innerText = resolved;
             document.getElementById('kpi-pending').innerText = pending;
-            document.getElementById('env-score').innerText = `API Score: ${(envState.current_grader_score || 0).toFixed(2)}`;
-            
-            // Note: KPI for Spam/Urgent can be mocked for the UI using activeIdx progress
-            document.getElementById('kpi-urgent').innerText = Math.floor(resolved * 0.3);
+            document.getElementById('kpi-urgent').innerText = Math.floor(resolved * 0.3) + (envState?.current_email?.urgency_level === 'high' ? 1 : 0);
             document.getElementById('kpi-spam').innerText = Math.floor(resolved * 0.2);
+            document.getElementById('inbox-count').innerText = `${pending} active`;
 
             renderSidebar();
-            renderMainAndInsights();
+            renderMainAndInsights(sData, resolved, total);
         }
 
         function renderSidebar() {
             const list = document.getElementById('sidebarList');
             let html = '';
             
-            // Use real email for active, fallback to high fidelity mock data for the rest.
-            // This ensures a 100% realistic "full inbox" look without altering backend.
             for (let i = 0; i < UI_MOCK_EMAILS.length; i++) {
                 let m = UI_MOCK_EMAILS[i];
                 let isResolved = i < activeIdx;
@@ -362,16 +463,15 @@
                 let sender = m.sender;
                 let subj = m.subj;
                 let prev = m.prev;
-                let badgeHtml = '';
+                let urgBadge = m.mockUrg;
+                let catBadge = m.mockCat;
 
                 if (isEnvCurrent && envState.current_email) {
                     sender = envState.current_email.sender;
                     subj = envState.current_email.subject;
                     prev = envState.current_email.body.substring(0, 50) + '...';
-                    const urg = envState.current_email.urgency_level || 'low';
-                    badgeHtml = `<span class="badge badge-${urg}">${urg}</span>`;
-                } else if (isResolved) {
-                    badgeHtml = `<span class="badge badge-low">Done</span>`;
+                    urgBadge = envState.current_email.urgency_level || 'medium';
+                    catBadge = envState.current_email.category || 'work';
                 }
 
                 let classes = "email-item";
@@ -382,8 +482,10 @@
                     <div class="${classes}" onclick="selectItem(${i})">
                         <div class="ei-sender"><span>${sender}</span> <span class="ei-time">${m.ts}</span></div>
                         <div class="ei-subject">${subj}</div>
-                        <div class="ei-preview">${prev}</div>
-                        <div class="ei-badges">${badgeHtml}</div>
+                        <div class="ei-badges">
+                            <span class="badge badge-${urgBadge}">${urgBadge} priority</span>
+                            ${isResolved ? `<span class="badge" style="background:#cbd5e1">Processed</span>` : `<span class="badge badge-category">${catBadge}</span>`}
+                        </div>
                     </div>
                 `;
             }
@@ -393,31 +495,64 @@
         function selectItem(idx) {
             selectedIdx = idx;
             renderSidebar();
-            renderMainAndInsights();
+            renderMainAndInsights(); // use cached states
         }
 
-        function renderMainAndInsights() {
-            const mainEl = document.getElementById('mainPreview');
-            const insEl = document.getElementById('insightsContent');
+        function renderMainAndInsights(sData = null, resolved = activeIdx, total = UI_MOCK_EMAILS.length) {
+            const mainEl = document.getElementById('previewScroll');
+            
+            // INSIGHTS references
+            const reasonEl = document.getElementById('ai-reasons');
+            const confTxt = document.getElementById('ai-conf-txt');
+            const confBar = document.getElementById('ai-conf-bar');
+            const rewList = document.getElementById('reward-list');
+            const rewCur = document.getElementById('reward-current');
+            const epProg = document.getElementById('episode-prog');
 
-            if (selectedIdx === activeIdx && envState.current_email) {
-                // Show real backend state
+            if (selectedIdx === activeIdx && envState && envState.current_email) {
                 const e = envState.current_email;
-                const attachMock = e.subject.toLowerCase().includes('form') ? `<div class="attachments">📎 forms.pdf</div>` : '';
+                
+                // --- PREVIEW PANEL ---
+                let threadHtml = '';
+                if (e.subject.toLowerCase().includes('re:')) {
+                    threadHtml = `
+                    <div class="thread-history">
+                        <div><strong>Previous email detected</strong></div>
+                        <div>Last reply: 2 hours ago</div>
+                        <div>Suggested follow-up needed based on thread history.</div>
+                    </div>`;
+                }
+
+                let draftHtml = '';
+                if (e.suggested_reply) {
+                    draftHtml = `
+                    <div class="ai-draft">
+                        <div class="ai-draft-title">✨ Suggested AI Reply</div>
+                        <div class="ai-draft-body">${e.suggested_reply}</div>
+                        <div class="btn-use-reply" onclick="performAction(2)">Use Reply</div>
+                    </div>
+                    `;
+                }
 
                 mainEl.innerHTML = `
+                    ${threadHtml}
                     <div class="mail-header">
-                        <h2 class="mail-subject">${e.subject}</h2>
+                        <div class="mail-subject">
+                            ${e.subject}
+                            <span class="badge badge-${e.urgency_level || 'low'}">${e.urgency_level} URGENCY</span>
+                            <span class="badge badge-score">Score: ${e.priority_score}/10</span>
+                        </div>
                         <div class="mail-meta-row">
                             <span><strong>From:</strong> ${e.sender}</span>
                             <span>Just now</span>
                         </div>
                         <div class="mail-meta-row">
-                            <span><strong>To:</strong> You &lt;agent@openenv.local&gt;</span>
+                            <span><strong>To:</strong> You &lt;agent@enterprise.ai&gt;</span>
                         </div>
-                        ${attachMock}
                     </div>
                     <div class="mail-body">${e.body}</div>
+
+                    ${draftHtml}
 
                     <div class="user-actions">
                         <button class="btn btn-reply" onclick="performAction(2)">↩ Reply</button>
@@ -427,90 +562,50 @@
                     </div>
                 `;
 
-                // Confidence mock
-                const conf = [94, 88, 97, 82][Math.floor(Math.random() * 4)];
-                
-                // Reason generator
+                // --- INSIGHTS PANEL ---
+                const confVal = [96, 92, 98, 89][Math.floor(Math.random() * 4)];
+                confTxt.innerText = `${confVal}%`;
+                confBar.style.width = `${confVal}%`;
+
                 let reasons = [];
-                if(e.deadline_extracted) reasons.push("deadline phrase found");
-                if(e.urgency_level === 'high') reasons.push("urgent keyword detected");
-                if(e.category === 'work') reasons.push("work-related context");
-                if(e.category === 'spam') reasons.push("untrusted sender domain");
-                if(e.category === 'finance') reasons.push("financial terminology");
-                if(reasons.length === 0) reasons.push("standard processing");
+                if(e.urgency_level === 'high' || e.urgency_level === 'urgent') reasons.push(`urgency keyword detected`);
+                if(e.category !== 'spam') reasons.push("trusted sender domain");
+                if(e.category === 'work' || e.category === 'finance') reasons.push("business-critical entity context");
+                if(e.sentiment === 'negative' || e.priority_score > 7) reasons.push("negative incident sentiment detected");
+                if(e.deadline_extracted) reasons.push(`deadline phrase: "${e.deadline_extracted}"`);
+                reasons.push(`confidence: ${confVal}%`);
 
-                insEl.innerHTML = `
-                    <div class="metric-block">
-                        <div class="metric-title">Structured API Output</div>
-                        <pre><code>{
-  "category": "${e.category}",
-  "priority": ${e.priority_score},
-  "urgency": "${e.urgency_level}",
-  "confidence": "${conf}%",
-  "deadline": "${e.deadline_extracted || 'None'}",
-  "action": "${e.action_recommendation}"
-}</code></pre>
-                    </div>
+                reasonEl.innerHTML = reasons.map(r => `<li>${r}</li>`).join('');
 
-                    <div class="explain-box">
-                        <div class="metric-title" style="color: #92400e;">Why this decision?</div>
-                        Reason:
-                        <ul>
-                            ${reasons.map(r => `<li>- ${r}</li>`).join('')}
-                        </ul>
-                    </div>
-
-                    ${e.suggested_reply ? `
-                        <div class="metric-block" style="background:#f0fdff; border-color:#bae6fd">
-                            <div class="metric-title" style="color:#0369a1">💬 Suggested Auto-Reply</div>
-                            <div style="font-size:0.875rem; color:#0c4a6e; margin-top:0.5rem;">${e.suggested_reply}</div>
-                        </div>
-                    ` : ''}
+                // Reward Intelligence
+                rewList.innerHTML = `
+                    <div class="reward-row"><span>correct category</span> <span class="reward-val">+0.20</span></div>
+                    <div class="reward-row"><span>priority alignment</span> <span class="reward-val">+0.30</span></div>
+                    <div class="reward-row"><span>correct action</span> <span class="reward-val">+0.50</span></div>
+                    <div class="reward-row"><span style="color:#b45309; opacity:0.7">fast resolution penalty</span> <span class="reward-val" style="color:#b45309; opacity:0.7">-0.00</span></div>
                 `;
+                rewCur.innerText = (envState.current_grader_score || 0).toFixed(2);
+                epProg.innerText = `Episode Progress: ${resolved} / ${total}`;
+                
             } else if (selectedIdx < activeIdx) {
-                // Resolved item
                 const m = UI_MOCK_EMAILS[selectedIdx];
                 mainEl.innerHTML = `
-                    <div class="mail-header">
-                        <h2 class="mail-subject">${m.subj}</h2>
-                        <div class="mail-meta-row"><span><strong>From:</strong> ${m.sender}</span></div>
-                    </div>
-                    <div class="mail-body">${m.prev}<br><br><br><em>(Archived task. Email details restricted securely by environment constraints)</em></div>
-                    <div class="user-actions">
-                        <button class="btn" disabled>Already Resolved</button>
-                    </div>
+                    <div class="mail-header"><div class="mail-subject">${m.subj}</div></div>
+                    <div class="mail-body" style="opacity:0.6">${m.prev}<br><br><em>(This task was successfully triaged by the AI agent.)</em></div>
                 `;
-                insEl.innerHTML = `
-                    <div class="metric-block">
-                        <div class="metric-title">Analytics</div>
-                        <p style="font-size:0.85rem; color:var(--text-secondary)">Task successfully classified and resolved during previous step.</p>
-                    </div>
-                `;
+                reasonEl.innerHTML = `<li>Task completed successfully</li>`;
+                rewList.innerHTML = `<div class="reward-row"><span>Agent Score</span> <span class="reward-val">1.00</span></div>`;
             } else {
-                // Future item
-                const m = UI_MOCK_EMAILS[selectedIdx];
-                mainEl.innerHTML = `
-                    <div class="mail-header">
-                        <h2 class="mail-subject">${m.subj}</h2>
-                        <div class="mail-meta-row"><span><strong>From:</strong> ${m.sender}</span></div>
-                    </div>
-                    <div class="empty-preview" style="height:200px">
-                        <p>This email is locked. Process earlier emails to reach this step.</p>
-                    </div>
-                `;
-                insEl.innerHTML = ``;
+                mainEl.innerHTML = `<div style="height:100%; display:flex; align-items:center; justify-content:center; color:var(--text-secondary)">Task is locked. Complete pending tasks.</div>`;
             }
 
             if (envState && envState.emails_remaining === 0) {
                  mainEl.innerHTML = `
-                    <div class="empty-preview">
-                        <h3>🎉 Inbox Zero</h3>
-                        <p>All emails for this difficulty dataset have been processed.</p>
-                        <br/>
-                        <button class="btn btn-primary" style="background:var(--primary)" onclick="resetEnv()">Run Different Dataset</button>
+                    <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                        <h2 style="margin-bottom:1rem">🎉 Queue Cleared</h2>
+                        <button class="btn btn-primary" onclick="resetEnv()">Run Next Episode</button>
                     </div>
                 `;
-                 insEl.innerHTML = ``;
             }
         }
 
