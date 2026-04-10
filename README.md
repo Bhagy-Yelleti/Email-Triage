@@ -1,133 +1,55 @@
----
-title: OpenEnv Email Triage
-emoji: "📬"
-colorFrom: indigo
-colorTo: blue
-sdk: docker
-app_port: 7860
-pinned: false
----
+# Email Triage OpenEnv
 
-# 📧 Email Triage OpenEnv
+AI-powered enterprise email triage environment built using OpenEnv, FastAPI, and deployed on Hugging Face Spaces.
 
-Production-grade AI-powered email prioritization and response environment built using OpenEnv and deployed on Hugging Face Spaces.
+## Live Demo
 
-![Python](https://img.shields.io/badge/Python-3.9+-blue.svg?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi)
-![OpenEnv](https://img.shields.io/badge/OpenEnv-Certified-success.svg)
-![Hugging Face Spaces](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?logo=huggingface)
-![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?logo=docker&logoColor=white)
-![Hackathon Submission](https://img.shields.io/badge/Hackathon-Submission-purple)
+https://huggingface.co/spaces/bhagya1234567890/email-triage-openenv
 
----
+## Preview
 
-## 🚀 Live Demo
+![Dashboard](./screenshots/dashboard.png)
 
-> Fully deployed and validator-compliant production environment.
+![AI Insights](./screenshots/ai-panel.png)
 
-🔗 **Hugging Face Space:**
-[https://huggingface.co/spaces/bhagya1234567890/email-triage-openenv](https://huggingface.co/spaces/bhagya1234567890/email-triage-openenv)
+![Reward Panel](./screenshots/reward-panel.png)
 
-*(All UI features seamlessly hook into the OpenEnv reinforcement APIs!)*
+![Inbox View](./screenshots/inbox-view.png)
 
----
+## Overview
 
-## 🖼️ Application Screenshots
+This project simulates a high-stakes, real-world enterprise email triage operation. It transforms raw inbound communication into a deeply analyzable reinforcement learning environment. The AI agent navigates an asynchronous, prioritized inbox evaluating sentiments, detecting hidden deadlines, and deciding swift handling procedures. It serves as both a beautiful product demo and an authentic OpenEnv-compliant evaluation ground.
 
-### Dashboard Overview
-> Full UI screenshot of inbox + analytics + AI panel
+## Features
 
-![Dashboard Overview](screenshots/dashboard.png)
+* Dense visual RL reward shaping
+* Precision urgency classification and sentiment extraction
+* Continuous OpenEnv evaluation loop
+* Thread-aware deterministic inbox mocking
+* Live real-time UI/UX state synchronization
 
-### AI Intelligence Panel
-> Screenshot showing recommendation, deadline, sentiment
+## Tech Stack
 
-![AI Intelligence](screenshots/ai-panel.png)
+Python, FastAPI, OpenEnv, Docker, Hugging Face Spaces
 
-### Reward Breakdown
-> Screenshot of RL/OpenEnv scoring panel
-
-![Reward Breakdown](screenshots/reward-breakdown.png)
-
-### Inbox Queue View
-> Screenshot with multiple realistic emails
-
-![Inbox Queue View](screenshots/inbox-queue.png)
-
-*(Note: Ensure you populate the `/screenshots` directory with your live grabs!)*
-
----
-
-## ✨ Features
-
-* **Intelligent Email Classification:** Automatically categorizes inbound load (Work, Personal, Finance, Spam).
-* **Urgency Detection:** Identifies critical issues (e.g., server down alerts, urgent transactions).
-* **Deadline Extraction:** Detects implicit and explicit timeline requests ("ASAP", "By Friday").
-* **Sentiment Analysis:** Discovers negative incident emotions ensuring rapid escalation.
-* **Explainable AI Reasoning:** Visualizes exactly *why* a model made its triage decision for maximum transparency.
-* **Reward Shaping for RL Agents:** Multi-parameter float distribution explicitly rewarding sub-tasks without breaking the `(0, 1)` validator boundary.
-* **Structured OpenEnv API:** Implements standardized `/step`, `/reset`, and `/state` validation workflows.
-* **Production-Grade UI Dashboard:** Stunning 3-panel enterprise UI interface designed specifically for human-in-the-loop review.
-* **Deployed on Hugging Face Spaces:** Publicly available Docker execution instantly scaling to reviewers.
-
----
-
-## 🏗️ Architecture
-
-- **Frontend Dashboard:** A vanilla HTML/CSS/JS glassmorphism client implementing rigorous UI state management bridging seamlessly to RL environments.
-- **FastAPI Backend:** Lightweight Python 3.9+ webserver powering OpenEnv specification endpoints.
-- **OpenEnv Routes:** The rigid RL endpoints bridging the local states dicts to standard `StepRequests`.
-- **Reward Engine:** Calculates granular metric points leveraging expected vs actual actions, plus partial completion metrics (`urgency`, `category`).
-- **AI Reasoning Pipeline:** Synthesizes metadata from simulated LLM JSON responses (or explicit environment state mocking) to deliver real-time confidence scores and drafting matrices.
-
----
-
-## 🌍 Real-World Utility
-
-This environment simulates **real-world enterprise email triage workflows**. 
-
-Support, operations, and leadership teams are overwhelmed by thousands of emails daily. Understanding the *intent, urgency, and deadlines* within unstructured text is critical for AI assistants to be useful. 
-This project captures the core decision loop: classifying urgency, routing ownership, drafting suggested responses, and prioritizing incident escalations, all graded via a reproducible OpenEnv benchmark!
-
----
-
-## 💻 Tech Stack
-
-- **Python** (Core Environment & Logic)
-- **FastAPI** (Server Infrastructure)
-- **Hugging Face Spaces** (Cloud Deployment)
-- **OpenEnv** (RL Evaluation Specifications)
-- **Docker** (Containerization & Portability)
-- **HTML / CSS / JS** (Client UI)
-
----
-
-## 🛠️ Run environment locally
+## API Endpoints
 
 ```bash
-# Set up environment
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
-# Start the uvicorn API
-uvicorn app:app --host 0.0.0.0 --port 7860
+POST /reset
+POST /step
+GET /state
+GET /health
 ```
-Open `http://localhost:7860` to view the comprehensive UI Dashboard.
 
-## 🤖 Baseline inference
+## Reward Logic
 
-```bash
-export API_BASE_URL="..."
-export MODEL_NAME="..."
-export HF_TOKEN="..."
-python inference.py
+```text
++0.30 classification
++0.30 action
++0.20 urgency
++0.20 fast resolution
 ```
-> Note: Outputs strictly adhere to the OpenEnv output requirements: `[START]`, `[STEP]`, `[END]`.
 
-## 📦 Docker & Spec Testing
-```bash
-docker build -t openenv-email-triage .
-docker run --rm -p 7860:7860 openenv-email-triage
-openenv validate
-```
+## Author
+
+Bhagya Yelleti
