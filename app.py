@@ -185,12 +185,15 @@ def schema():
                 "episode_grader_score": {"type": ["number", "null"]},
                 "current_grader_score": {"type": "number"},
                 "current_inbox": {"type": "array", "items": {"type": "string"}},
+                "inbox_queue": {"type": "array", "items": {"type": "string"}},
                 "selected_email": {"type": ["string", "null"]},
                 "classified_labels": {"type": "object"},
                 "pending_threads": {"type": "array", "items": {"type": "string"}},
+                "thread_status": {"type": "array", "items": {"type": "string"}},
                 "reward_so_far": {"type": "number"},
                 "resolved_count": {"type": "integer"},
-                "flow_step": {"type": "string"}
+                "flow_step": {"type": "string"},
+                "done": {"type": "boolean"}
             },
         },
     }

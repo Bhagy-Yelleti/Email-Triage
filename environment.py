@@ -100,6 +100,7 @@ class EmailTriageEnv:
         
         return {
             "task_id": self._state.task_id,
+            "current_task": self._state.task_id,
             "current_email_index": self._state.current_email_index,
             "action_history": list(self._state.action_history),
             "steps_taken": self._state.steps_taken,
@@ -107,12 +108,15 @@ class EmailTriageEnv:
             "episode_grader_score": self._state.episode_grader_score,
             "current_grader_score": current_score,
             "current_inbox": list(self._state.current_inbox),
+            "inbox_queue": list(self._state.current_inbox),
             "selected_email": self._state.selected_email,
             "classified_labels": dict(self._state.classified_labels),
             "pending_threads": list(self._state.pending_threads),
+            "thread_status": list(self._state.pending_threads),
             "reward_so_far": self._state.reward_so_far,
             "resolved_count": self._state.resolved_count,
             "flow_step": self._state.flow_step,
+            "done": len(self._state.current_inbox) == 0 or self._state.steps_taken >= self._state.max_steps,
         }
 
     def _grader_input(self) -> GraderInput:
@@ -157,7 +161,7 @@ class EmailTriageEnv:
                 self._state.selected_email = selected_email_id
                 self._state.flow_step = "classify"
             else:
-                penalty -= 0.1 # Invalid email selection
+                penalty -= 0.10 # Invalid email selection
                 
         elif action == 1:
             if priority_order:
@@ -174,7 +178,7 @@ class EmailTriageEnv:
                     self._state.classified_labels[self._state.selected_email]["urgency_level"] = urgency_level
                 self._state.flow_step = "action_or_reply"
             else:
-                penalty -= 0.1
+                penalty -= 0.10
                 
         elif action == 3:
             if self._state.selected_email:
@@ -186,11 +190,11 @@ class EmailTriageEnv:
                 # Check for wrong spam escalation penalty
                 current_email = next((e for e in self._state.emails if e.id == self._state.selected_email), None)
                 if current_email and thread_status == "spam" and current_email.expected_action != "spam":
-                    penalty -= 0.2 # Wrong spam escalation
+                    penalty -= 0.15 # Wrong escalation
                     
                 self._state.flow_step = "resolve"
             else:
-                penalty -= 0.1
+                penalty -= 0.10
                 
         elif action == 4:
             if self._state.selected_email in self._state.current_inbox:
@@ -201,14 +205,14 @@ class EmailTriageEnv:
                 self._state.selected_email = None
                 self._state.flow_step = "inspect_inbox"
             else:
-                penalty -= 0.1
+                penalty -= 0.10
                 
         else:
-            penalty -= 0.1 # Unknown action
+            penalty -= 0.10 # Unknown action / Repeated action
 
-        # Infinite loop penalty approximation
+        # Infinite loop penalty
         if self._state.steps_taken > self._state.max_steps * 1.5:
-            penalty -= 0.1
+            penalty -= 0.10
             
         old_score = self._state.reward_so_far
         g_in = self._grader_input()

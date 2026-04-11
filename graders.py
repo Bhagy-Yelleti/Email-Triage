@@ -8,7 +8,6 @@ from tasks import TASK_INDEX, TaskSpec, Email
 _EPS = 0.05
 _MIN = _EPS
 _MAX = 1.0 - _EPS
-_DEFAULT = 0.5  # returned when called with no args
 
 def _to_open_interval(raw: float) -> float:
     """Map any float into the open interval (_MIN, _MAX)."""
@@ -57,111 +56,77 @@ def _coerce(g: Optional[Union[GraderInput, Dict[str, Any]]], task_id: str) -> Gr
         )
     return g
 
-def grade_email_easy_001(g=None) -> float:
-    inp = _coerce(g, "email-easy-001")
-    if not inp.emails: return _to_open_interval(0.0)
-    
-    # Task 1: Single Email Classification
-    # Reward: +0.3 category, +0.3 urgency, +0.4 action
-    
-    score = 0.0
-    email = inp.emails[0]
-    labels = inp.classified_labels.get(email.id, {})
-    
-    # 0.3 category
-    if labels.get("category", "").lower() == email.category.lower():
-        score += 0.3
-    
-    # 0.3 urgency
-    if labels.get("urgency_level", "").lower() == email.urgency_level.lower():
-        score += 0.3
+def _unified_grading_logic(inp: GraderInput) -> float:
+    if not inp.emails:
+        return _to_open_interval(0.0)
         
-    # 0.4 action (assumed set in thread_statuses for grading action)
-    if inp.thread_statuses.get(email.id, "").lower() == email.expected_action.lower():
-        score += 0.4
+    num_emails = len(inp.emails)
+    
+    # Feature 1: Classification Score (0 to 1)
+    classification_score = 0.0
+    for e in inp.emails:
+        labels = inp.classified_labels.get(e.id, {})
+        if labels.get("category", "").lower() == e.category.lower():
+            classification_score += 1.0 / num_emails
+            
+    # Feature 2: Urgency Score (0 to 1)
+    urgency_score = 0.0
+    for e in inp.emails:
+        labels = inp.classified_labels.get(e.id, {})
+        if labels.get("urgency_level", "").lower() == e.urgency_level.lower():
+            urgency_score += 1.0 / num_emails
+            
+    # Feature 3: Action Score (0 to 1)
+    # Includes standard action matching and reply semantics matching
+    action_score = 0.0
+    for e in inp.emails:
+        if inp.thread_statuses.get(e.id, "").lower() == str(e.expected_action).lower() or inp.thread_statuses.get(e.id, "").lower() == "reply" or str(e.expected_action) in inp.thread_statuses.get(e.id, ""):
+            match_val = 0.5
+            if e.suggested_reply and e.id in inp.replies and len(inp.replies[e.id]) > 5:
+                match_val += 0.5
+            elif not e.suggested_reply:
+                match_val += 0.5
+            action_score += match_val / num_emails
+            
+    # Feature 4: Ranking Score (0 to 1)
+    ranking_score = 0.0
+    if len(inp.emails) <= 1:
+        ranking_score = 1.0 # Auto-pass for 1 email
+    else:
+        if len(inp.priority_order) >= 1:
+            idx1 = inp.priority_order[0]
+            if idx1 < len(inp.emails) and inp.emails[idx1].urgency_level == 'high':
+                ranking_score += 0.5
+            if len(inp.priority_order) >= 2:
+                idx2 = inp.priority_order[1]
+                if idx2 < len(inp.emails) and inp.emails[idx2].urgency_level in ['high', 'medium']:
+                    ranking_score += 0.5
         
+    # Feature 5: Efficiency Score (0 to 1)
+    base_actions_needed = inp.resolved_count * 2
+    efficiency_score = 1.0 - min(1.0, max(0.0, (inp.steps_taken - base_actions_needed)) / max(inp.max_steps, 1))
+    if inp.resolved_count == 0:
+        efficiency_score = 0.0
+        
+    # User Required Mathematical Structure:
+    score = (
+        0.25 * classification_score +
+        0.20 * urgency_score +
+        0.20 * ranking_score +
+        0.20 * action_score +
+        0.15 * efficiency_score
+    )
+    
     return _to_open_interval(score)
+
+def grade_email_easy_001(g=None) -> float:
+    return _unified_grading_logic(_coerce(g, "email-easy-001"))
 
 def grade_email_medium_001(g=None) -> float:
-    inp = _coerce(g, "email-medium-001")
-    if not inp.emails: return _to_open_interval(0.0)
-    
-    # Task 2: Multi-Email Queue Prioritization
-    # Reward: +0.4 correct ordering, +0.3 classification, +0.3 action recommendation
-    
-    # Check priority ordering
-    # For medium task, correct priority corresponds to urgency.
-    expected_priority = sorted(inp.emails, key=lambda x: (x.urgency_level != 'high', x.urgency_level != 'medium', x.urgency_level != 'low'))
-    expected_ids = [e.id for e in expected_priority]
-    
-    score = 0.0
-    if inp.priority_order:
-        # Check rank correlation or basic exact match on top 2
-        # If top 2 are correct high-urgency tasks:
-        if len(inp.priority_order) >= 2:
-            # Assume agent priority_order maps to indices or ids. Since the schema says List[int], we compare indices.
-            idx1, idx2 = inp.priority_order[0], inp.priority_order[1]
-            if idx1 < len(inp.emails) and idx2 < len(inp.emails):
-                if inp.emails[idx1].urgency_level == 'high' and inp.emails[idx2].urgency_level == 'high':
-                    score += 0.4
-                elif inp.emails[idx1].urgency_level == 'high' or inp.emails[idx2].urgency_level == 'high':
-                    score += 0.2
-                    
-    cls_score = 0.0
-    act_score = 0.0
-    for email in inp.emails:
-        labels = inp.classified_labels.get(email.id, {})
-        if labels.get("category", "").lower() == email.category.lower():
-            cls_score += 0.5 / len(inp.emails) # partial
-        if labels.get("urgency_level", "").lower() == email.urgency_level.lower():
-            cls_score += 0.5 / len(inp.emails)
-            
-        if inp.thread_statuses.get(email.id, "").lower() == email.expected_action.lower():
-            act_score += 1.0 / len(inp.emails)
-            
-    score += (cls_score * 0.3)
-    score += (act_score * 0.3)
-    
-    return _to_open_interval(score)
+    return _unified_grading_logic(_coerce(g, "email-medium-001"))
 
 def grade_email_hard_001(g=None) -> float:
-    inp = _coerce(g, "email-hard-001")
-    if not inp.emails: return _to_open_interval(0.0)
-    
-    # Task 3: Thread-Based Workflow Resolution
-    # Reward: +0.2 thread understanding, +0.2 urgency, +0.2 reply quality, +0.2 correct action, +0.2 fast completion
-    
-    score = 0.0
-    
-    thr_score = 0.0
-    urg_score = 0.0
-    rep_score = 0.0
-    act_score = 0.0
-    
-    for email in inp.emails:
-        labels = inp.classified_labels.get(email.id, {})
-        if labels.get("urgency_level", "").lower() == email.urgency_level.lower():
-            urg_score += 1.0 / len(inp.emails)
-            
-        if email.id in inp.replies and email.suggested_reply:
-            if "we" in inp.replies[email.id].lower() or "migrate" in inp.replies[email.id].lower():
-                rep_score += 1.0 / len(inp.emails)
-                
-        if inp.thread_statuses.get(email.id, "").lower() == email.expected_action.lower():
-            act_score += 1.0 / len(inp.emails)
-            
-        if email.id in inp.thread_statuses and "thread_status" in labels:
-            thr_score += 1.0 / len(inp.emails)
-            
-    score += (thr_score * 0.2)
-    score += (urg_score * 0.2)
-    score += (rep_score * 0.2)
-    score += (act_score * 0.2)
-    
-    efficiency = 1.0 - min(1.0, (inp.steps_taken - inp.resolved_count * 2) / max(inp.max_steps, 1))
-    score += (max(0, efficiency) * 0.2)
-    
-    return _to_open_interval(score)
+    return _unified_grading_logic(_coerce(g, "email-hard-001"))
 
 GRADERS: Dict[str, Callable] = {
     "email-easy-001": grade_email_easy_001,

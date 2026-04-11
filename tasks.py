@@ -51,6 +51,7 @@ medium_emails = [
 hard_emails = [
     Email("h1", "ceo-assistant@company.com", "RE: Meeting rescheduled", "Following up on our earlier thread. The CEO wants to meet you in 10 minutes regarding the PR crisis. We need a drafted response.", 2, "urgent", 10, "high", "negative", "10 minutes", "follow_up", "We are actively working on the issue."),
     Email("h2", "support@thirdparty.com", "RE: API deprecation notice", "As discussed yesterday, we are deprecating the API. What is your migration timeline?", 2, "work", 8, "high", "negative", "next week", "reply", "We will migrate by end of week."),
+    Email("h3", "legal@company.com", "FWD: Confidential litigation", "Do NOT forward this. We need to escalate the evidence bundle by 5PM. Context required.", 0, "urgent", 10, "high", "negative", "5PM", "flag", None),
 ]
 
 
