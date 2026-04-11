@@ -214,6 +214,31 @@ class EmailTriageEnv:
         if self._state.steps_taken > self._state.max_steps * 1.5:
             penalty -= 0.10
             
+        # ====================
+        # Dynamic Events Logic
+        # ====================
+        if self._state.task_id == "email-dyn-hard-001":
+            # Check if critical email is unresolved for too long (e.g. CEO email 'd1')
+            if "d1" in self._state.current_inbox and self._state.steps_taken == 6:
+                follow_up = Email("d1_esc", "ceo@company.com", "URGENT: Press Leak ESCALATION", "Why hasn't this been fixed yet?!", 0, "urgent", 10, "high", "negative", "NOW", "flag", None)
+                self._state.emails.append(follow_up)
+                self._state.current_inbox.append("d1_esc")
+                
+            # If a deadline is missed due to step progression
+            if "d2" in self._state.current_inbox and self._state.steps_taken == 4: # Fraud alert
+                # Boost priority implicitly dynamically handled by grader
+                pass
+                
+            # Wrong action creates customer escalation
+            if action == 4 and self._state.selected_email == "d3":
+                labels = self._state.classified_labels.get("d3", {})
+                if labels.get("category", "") != "work" or labels.get("urgency_level", "") != "high":
+                    follow_up = Email("d3_esc", "angry-customer@client.com", "UNACCEPTABLE OUTAGE", "I am canceling my subscription.", 2, "work", 10, "high", "negative", "now", "reply", "We sincerely apologize.")
+                    self._state.emails.append(follow_up)
+                    self._state.current_inbox.append("d3_esc")
+                    
+        # ====================
+            
         old_score = self._state.reward_so_far
         g_in = self._grader_input()
         new_score = grade_task(self._state.task_id, g_in)

@@ -128,10 +128,76 @@ def grade_email_medium_001(g=None) -> float:
 def grade_email_hard_001(g=None) -> float:
     return _unified_grading_logic(_coerce(g, "email-hard-001"))
 
+def grade_email_dyn_hard_001(g=None) -> float:
+    inp = _coerce(g, "email-dyn-hard-001")
+    if not inp.emails:
+        return _to_open_interval(0.0)
+        
+    # Stakeholder weights
+    weights = {"ceo": 1.0, "fraud": 0.9, "customer": 0.8, "hr": 0.5, "promo": 0.1}
+    
+    # Adaptive reward metric trackers
+    c_res = 0.0
+    esc_hand = 0.0
+    st_prio = 0.0
+    dyn_fup = 0.0
+    th_mem = 0.0
+    
+    resolved = 0
+    total_weight = sum([weights.get(e.sender.split("@")[0].split("-")[0], 0.5) for e in inp.emails])
+    
+    for e in inp.emails:
+        s_weight = weights.get(e.sender.split("@")[0].split("-")[0], 0.5)
+        
+        is_resolved = e.id not in [x.id for x in inp.emails if "esc" in x.id] and e.id in inp.thread_statuses
+        if is_resolved:
+            c_res += s_weight / total_weight
+            resolved += 1
+            
+        if "esc" in e.id:
+            # Handling escalations correctly
+            if e.id in inp.thread_statuses:
+                esc_hand += 1.0
+                dyn_fup += 1.0
+                
+        # thread memory: Did agent refer to correct thread status
+        if e.id in inp.replies and e.suggested_reply:
+            if str(e.expected_action) in inp.thread_statuses.get(e.id, ""):
+                th_mem += 1.0 / len(inp.emails)
+                
+    if len([e for e in inp.emails if "esc" in e.id]) > 0:
+        esc_hand /= max(1, len([e for e in inp.emails if "esc" in e.id]))
+        dyn_fup /= max(1, len([e for e in inp.emails if "esc" in e.id]))
+    else:
+        esc_hand = 1.0
+        dyn_fup = 1.0
+
+    # Stakeholder priority alignment (did they prioritize highest weight first?)
+    st_prio = 1.0 # Base
+    if len(inp.priority_order) >= 1:
+        first_e = inp.emails[inp.priority_order[0]] if inp.priority_order[0] < len(inp.emails) else None
+        if first_e and weights.get(first_e.sender.split("@")[0].split("-")[0], 0) < 0.9:
+            st_prio -= 0.5 # Penalty for not prioritizing CEO or Fraud
+            
+    base_actions = resolved * 2
+    eff = 1.0 - min(1.0, max(0.0, (inp.steps_taken - base_actions)) / max(inp.max_steps, 1))
+
+    score = (
+        0.25 * c_res +
+        0.20 * esc_hand +
+        0.15 * st_prio +
+        0.15 * eff +
+        0.15 * dyn_fup +
+        0.10 * th_mem
+    )
+    
+    return _to_open_interval(score)
+
 GRADERS: Dict[str, Callable] = {
     "email-easy-001": grade_email_easy_001,
     "email-medium-001": grade_email_medium_001,
     "email-hard-001": grade_email_hard_001,
+    "email-dyn-hard-001": grade_email_dyn_hard_001,
 }
 
 def grade_task(task_id: str, g=None) -> float:

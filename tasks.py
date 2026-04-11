@@ -54,6 +54,15 @@ hard_emails = [
     Email("h3", "legal@company.com", "FWD: Confidential litigation", "Do NOT forward this. We need to escalate the evidence bundle by 5PM. Context required.", 0, "urgent", 10, "high", "negative", "5PM", "flag", None),
 ]
 
+# Dynamic Flagship Task Emails
+dyn_hard_emails = [
+    Email("d1", "ceo@company.com", "URGENT: Press Leak", "A leak just hit the press. Fix this in the next 10 minutes.", 0, "urgent", 10, "high", "negative", "10 minutes", "flag", None),
+    Email("d2", "fraud-alert@bank.com", "Suspicious Account Activity", "We detected unusual login attempts from Russia. Secure the account.", 0, "urgent", 9, "high", "negative", "ASAP", "flag", None),
+    Email("d3", "angry-customer@client.com", "Service Outage", "We have been offline for 2 hours! Unacceptable. Escalating.", 2, "work", 8, "high", "negative", "now", "reply", "We are looking into the outage right now."),
+    Email("d4", "hr@company.com", "Performance Review Setup", "Please set up your yearly review by tomorrow.", 1, "work", 5, "medium", "neutral", "tomorrow", "archive", None),
+    Email("d5", "promo@sass.com", "Black Friday Deal", "Get 90% off our sass product for a limited time.", 3, "spam", 1, "low", "positive", "none", "spam", None),
+]
+
 
 TASK_LIST: List[TaskSpec] = [
     TaskSpec(
@@ -73,6 +82,12 @@ TASK_LIST: List[TaskSpec] = [
         difficulty="hard",
         emails=hard_emails,
         max_steps=24,
+    ),
+    TaskSpec(
+        task_id="email-dyn-hard-001",
+        difficulty="hard-dynamic",
+        emails=dyn_hard_emails,
+        max_steps=30,
     ),
 ]
 
