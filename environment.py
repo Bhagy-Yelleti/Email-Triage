@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any
+import random
 
 from graders import GraderInput, grade_task
 from tasks import TASK_INDEX, TASK_LIST, TaskSpec, Email
@@ -40,11 +41,12 @@ class EmailTriageEnv:
         self._completed_task_scores: Dict[str, float] = {}
 
     def _apply_task_spec(self, spec: TaskSpec) -> None:
+        random.seed(spec.task_seed)
         self._state = EmailTriageState(
             task_id=spec.task_id,
             emails=list(spec.emails),
             current_inbox=[e.id for e in spec.emails],
-            pending_threads=[e.id for e in spec.emails if "RE:" in e.subject or "follow-up" in e.subject.lower()],
+            pending_threads=[e.id for e in spec.emails if "RE:" in e.subject or "follow-up" in e.subject.lower() or "FWD:" in e.subject],
             max_steps=spec.max_steps,
         )
 
@@ -218,18 +220,12 @@ class EmailTriageEnv:
         # Dynamic Events Logic
         # ====================
         if self._state.task_id == "email-dyn-hard-001":
-            # Check if critical email is unresolved for too long (e.g. CEO email 'd1')
             if "d1" in self._state.current_inbox and self._state.steps_taken == 6:
                 follow_up = Email("d1_esc", "ceo@company.com", "URGENT: Press Leak ESCALATION", "Why hasn't this been fixed yet?!", 0, "urgent", 10, "high", "negative", "NOW", "flag", None)
                 self._state.emails.append(follow_up)
                 self._state.current_inbox.append("d1_esc")
-                
-            # If a deadline is missed due to step progression
-            if "d2" in self._state.current_inbox and self._state.steps_taken == 4: # Fraud alert
-                # Boost priority implicitly dynamically handled by grader
+            if "d2" in self._state.current_inbox and self._state.steps_taken == 4:
                 pass
-                
-            # Wrong action creates customer escalation
             if action == 4 and self._state.selected_email == "d3":
                 labels = self._state.classified_labels.get("d3", {})
                 if labels.get("category", "") != "work" or labels.get("urgency_level", "") != "high":
@@ -237,6 +233,30 @@ class EmailTriageEnv:
                     self._state.emails.append(follow_up)
                     self._state.current_inbox.append("d3_esc")
                     
+        # ====================
+        # Adversarial Logic
+        # ====================
+        if self._state.task_id == "email-adv-hard-001":
+            # Phishing consequences & false negatives
+            if action == 4 and self._state.selected_email in ["a2", "a3"]:
+                labels = self._state.classified_labels.get(self._state.selected_email, {})
+                thread_stat = self._state.thread_statuses.get(self._state.selected_email, "")
+                if labels.get("category", "") != "phishing" or thread_stat != "quarantine":
+                    penalty -= 0.25 # phishing false negative
+                    breach_follow = Email(f"{self._state.selected_email}_breach", "it-alert@company-security.tech", "SECURITY BREACH DETECTED", "Internal systems compromised via insecure link.", 0, "urgent", 10, "high", "negative", "NOW", "flag", None)
+                    self._state.emails.append(breach_follow)
+                    self._state.current_inbox.append(breach_follow.id)
+            
+            # Missed VIP Escalation
+            if action == 3 and self._state.selected_email == "a1":
+                if thread_status != "escalate":
+                    penalty -= 0.20 # missed VIP escalation
+                    
+            # Critical issue ignored -> CEO Followup
+            if self._state.steps_taken == 8 and "a1" in self._state.current_inbox:
+                ceo_follow = Email("a1_nag", "ceo@company.com", "RE: Project Alpha Launch", "Why hasn't this been escalated?!", 0, "urgent", 10, "high", "negative", "NOW", "reply", "Working on it immediately.")
+                self._state.emails.append(ceo_follow)
+                self._state.current_inbox.append("a1_nag")
         # ====================
             
         old_score = self._state.reward_so_far

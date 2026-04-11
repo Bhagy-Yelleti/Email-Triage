@@ -32,6 +32,7 @@ class TaskSpec:
     difficulty: str
     emails: List[Email]
     max_steps: int
+    task_seed: int = 42
 
 # Easy Emails
 easy_emails = [
@@ -63,6 +64,14 @@ dyn_hard_emails = [
     Email("d5", "promo@sass.com", "Black Friday Deal", "Get 90% off our sass product for a limited time.", 3, "spam", 1, "low", "positive", "none", "spam", None),
 ]
 
+# Adversarial Enterprise Inbox (Flagship Hard Task)
+adv_hard_emails = [
+    Email("a1", "ceo@company.com", "Project Alpha Launch", "We need to clear the launch blocks ASAP.", 0, "urgent", 10, "high", "neutral", "EOD", "escalate", "Escalating now."),
+    Email("a2", "ceo-support@company-security.com", "URGENT: Mandatory Password Reset", "Your corporate account was flagged. Reset immediately.", 3, "phishing", 0, "high", "negative", "ASAP", "quarantine", None),
+    Email("a3", "fraud@bank-alerts.com", "Suspicious login attempt", "Unknown login from IP 192.168.0.1. Please click to review.", 3, "phishing", 0, "high", "negative", "now", "quarantine", None),
+    Email("a4", "legal@company.com", "FWD: Confidential litigation", "Do NOT forward this. We need to escalate the evidence bundle by 5PM.", 0, "urgent", 10, "high", "negative", "5PM", "escalate", None),
+]
+
 
 TASK_LIST: List[TaskSpec] = [
     TaskSpec(
@@ -88,6 +97,13 @@ TASK_LIST: List[TaskSpec] = [
         difficulty="hard-dynamic",
         emails=dyn_hard_emails,
         max_steps=30,
+    ),
+    TaskSpec(
+        task_id="email-adv-hard-001",
+        difficulty="hard-adversarial",
+        emails=adv_hard_emails,
+        max_steps=35,
+        task_seed=1337,
     ),
 ]
 

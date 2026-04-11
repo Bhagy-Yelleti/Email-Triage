@@ -128,6 +128,71 @@ def grade_email_medium_001(g=None) -> float:
 def grade_email_hard_001(g=None) -> float:
     return _unified_grading_logic(_coerce(g, "email-hard-001"))
 
+def grade_email_adv_hard_001(g=None) -> float:
+    inp = _coerce(g, "email-adv-hard-001")
+    if not inp.emails:
+        return _to_open_interval(0.0)
+        
+    crit_res = 0.0
+    phish_det = 0.0
+    st_prio = 0.0
+    del_cons = 0.0
+    eff = 0.0
+    th_mem = 0.0
+    
+    resolved = 0
+    num_emails = len(inp.emails)
+    
+    # Analyze core metrics
+    for e in inp.emails:
+        labels = inp.classified_labels.get(e.id, {})
+        thread_stat = inp.thread_statuses.get(e.id, "")
+        
+        is_resolved = e.id in inp.thread_statuses
+        if is_resolved:
+            resolved += 1
+            if "breach" not in e.id and "nag" not in e.id:
+                crit_res += 1.0 / max(1, len([x for x in inp.emails if "breach" not in x.id and "nag" not in x.id]))
+                
+        # Phishing detection
+        if e.id in ["a2", "a3"]:
+            if labels.get("category", "") == "phishing" and thread_stat == "quarantine":
+                phish_det += 0.5
+                
+        # Thread memory
+        if e.id in inp.replies and thread_stat:
+            # If they provided a reply to something requiring it
+            if "reply" in thread_stat or "escalate" in thread_stat:
+                th_mem += 1.0 / len(inp.emails)
+                
+    # Stakeholder priority (Did they prioritize CEO correctly?)
+    st_prio = 1.0
+    if len(inp.priority_order) >= 1:
+        first_e = inp.emails[inp.priority_order[0]] if inp.priority_order[0] < len(inp.emails) else None
+        if first_e and "ceo@company.com" not in first_e.sender:
+            st_prio -= 0.5
+            
+    # Delayed consequence prevention: Max if no "breach" or "nag" emails generated
+    breaches = len([e for e in inp.emails if "breach" in e.id or "nag" in e.id])
+    if breaches == 0:
+        del_cons = 1.0
+    else:
+        del_cons = max(0.0, 1.0 - (0.5 * breaches))
+        
+    base_actions = resolved * 2
+    eff = 1.0 - min(1.0, max(0.0, (inp.steps_taken - base_actions)) / max(inp.max_steps, 1))
+    
+    score = (
+        0.20 * crit_res +
+        0.20 * phish_det +
+        0.15 * st_prio +
+        0.15 * del_cons +
+        0.15 * eff +
+        0.15 * th_mem
+    )
+    
+    return _to_open_interval(score)
+
 def grade_email_dyn_hard_001(g=None) -> float:
     inp = _coerce(g, "email-dyn-hard-001")
     if not inp.emails:
@@ -196,8 +261,8 @@ def grade_email_dyn_hard_001(g=None) -> float:
 GRADERS: Dict[str, Callable] = {
     "email-easy-001": grade_email_easy_001,
     "email-medium-001": grade_email_medium_001,
-    "email-hard-001": grade_email_hard_001,
     "email-dyn-hard-001": grade_email_dyn_hard_001,
+    "email-adv-hard-001": grade_email_adv_hard_001,
 }
 
 def grade_task(task_id: str, g=None) -> float:

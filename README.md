@@ -1,6 +1,6 @@
 # Email Triage OpenEnv
 
-AI-powered enterprise email triage environment built using OpenEnv, FastAPI, and deployed on Hugging Face Spaces.
+A benchmark-quality reinforcement learning environment for enterprise email decision-making, threat detection, and multi-step incident response.
 
 ![Dashboard Preview](./screenshots/dashboard.png)
 
@@ -22,13 +22,39 @@ This project simulates a real-world enterprise email triage workflow where an AI
 
 It is designed as a realistic benchmark for evaluating intelligent agents on communication-heavy enterprise workflows.
 
-## Features
+## Benchmark Highlights
 
-* Dense visual RL reward shaping
-* Precision urgency classification and sentiment extraction
-* Continuous OpenEnv evaluation loop
-* Thread-aware deterministic inbox mocking
-* Live real-time UI/UX state synchronization
+- adversarial phishing detection
+- deceptive sender spoofing
+- delayed consequence simulation
+- deterministic seeded episodes
+- multi-step RL state transitions
+- strategic stakeholder conflicts
+- benchmark-grade reward shaping
+
+## Flagship Hard Task — Adversarial Enterprise Inbox
+
+This task simulates a high-pressure enterprise inbox containing critical incidents, phishing attempts, deceptive sender domains, and delayed escalation threads.
+
+The agent must balance speed, safety, and business priority while making sequential decisions.
+
+## Dynamic Consequence Modeling
+
+Actions taken in earlier steps affect future inbox state.
+
+Examples include:
+- breach alerts triggered by missed phishing
+- CEO escalation threads
+- missed deadline penalties
+- cascading customer incidents
+
+## RL Environment Design
+
+- multi-step episode transitions
+- deterministic seeded randomness
+- partial reward shaping
+- long-horizon delayed penalties
+- adaptive thread generation
 
 ## Tech Stack
 
@@ -45,20 +71,20 @@ GET /health
 
 ## Reward Logic
 
-```text
-+0.30 classification
-+0.30 action
-+0.20 urgency
-+0.20 fast resolution
-```
++0.20 critical resolution  
++0.20 phishing detection  
++0.15 stakeholder priority  
++0.15 delayed consequence prevention  
++0.15 efficiency  
++0.15 thread memory
 
 ## Baseline Performance
 
 * Validation Status: Passed
 * Hugging Face Deployment: Live
-* Max Episode Steps: 15
+* Max Episode Steps: 35
 * Reward Range: 0.0 – 1.0
-* Difficulty Levels: Easy / Medium / Hard
+* Difficulty Levels: Easy / Medium / Hard / Dynamic / Adversarial
 
 ## Author
 
