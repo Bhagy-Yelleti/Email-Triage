@@ -42,9 +42,13 @@ def reset_post(payload: ResetBody = Body(default_factory=ResetBody)):
 
 
 class StepRequest(BaseModel):
-    action: int = Field(..., ge=0, le=3)
+    action: int = Field(..., ge=0, le=5)
     category: Optional[str] = None
     urgency_level: Optional[str] = None
+    priority_order: Optional[List[int]] = None
+    reply: Optional[str] = None
+    thread_status: Optional[str] = None
+    selected_email_id: Optional[str] = None
 
 @app.post("/step/{action}")
 def step_path(action: int):
@@ -52,7 +56,15 @@ def step_path(action: int):
 
 @app.post("/step")
 def step_body(payload: StepRequest = Body(...)):
-    return env.step(payload.action, payload.category, payload.urgency_level)
+    return env.step(
+        payload.action, 
+        payload.category, 
+        payload.urgency_level, 
+        payload.priority_order, 
+        payload.reply, 
+        payload.thread_status, 
+        payload.selected_email_id
+    )
 
 
 @app.get("/state")
@@ -123,9 +135,15 @@ def schema():
                 "action": {
                     "type": "integer",
                     "minimum": 0,
-                    "maximum": 3,
-                    "description": "0=mark_urgent, 1=archive, 2=reply, 3=mark_spam",
-                }
+                    "maximum": 5,
+                    "description": "0=inspect, 1=prioritize, 2=classify, 3=reply/action, 4=resolve",
+                },
+                "category": {"type": "string"},
+                "urgency_level": {"type": "string"},
+                "priority_order": {"type": "array", "items": {"type": "integer"}},
+                "reply": {"type": "string"},
+                "thread_status": {"type": "string"},
+                "selected_email_id": {"type": "string"}
             },
             "required": ["action"],
         },
@@ -166,6 +184,13 @@ def schema():
                 "max_steps": {"type": "integer"},
                 "episode_grader_score": {"type": ["number", "null"]},
                 "current_grader_score": {"type": "number"},
+                "current_inbox": {"type": "array", "items": {"type": "string"}},
+                "selected_email": {"type": ["string", "null"]},
+                "classified_labels": {"type": "object"},
+                "pending_threads": {"type": "array", "items": {"type": "string"}},
+                "reward_so_far": {"type": "number"},
+                "resolved_count": {"type": "integer"},
+                "flow_step": {"type": "string"}
             },
         },
     }

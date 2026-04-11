@@ -6,7 +6,6 @@ from typing import Dict, List, Optional, Any
 from graders import GraderInput, grade_task
 from tasks import TASK_INDEX, TASK_LIST, TaskSpec, Email
 
-
 @dataclass
 class EmailTriageState:
     task_id: str = "email-easy-001"
@@ -15,19 +14,24 @@ class EmailTriageState:
     action_history: List[int] = field(default_factory=list)
     steps_taken: int = 0
     max_steps: int = 20
-    # Final grader score for the task when episode ends (strictly in (0,1)).
     episode_grader_score: Optional[float] = None
-
+    
+    current_inbox: List[str] = field(default_factory=list)
+    selected_email: Optional[str] = None
+    classified_labels: Dict[str, Dict[str, str]] = field(default_factory=dict)
+    pending_threads: List[str] = field(default_factory=list)
+    reward_so_far: float = 0.0
+    resolved_count: int = 0
+    flow_step: str = "inspect_inbox"
+    
+    # Internal trackers for grading
+    priority_order: List[int] = field(default_factory=list)
+    replies: Dict[str, str] = field(default_factory=dict)
+    thread_statuses: Dict[str, str] = field(default_factory=dict)
 
 class EmailTriageEnv:
     """
-    Email triage RL-style environment with per-task specs and registered graders.
-
-    Actions:
-    0 = mark as urgent
-    1 = archive
-    2 = reply
-    3 = mark spam
+    Email triage RL-style environment updated for multi-step transitions.
     """
 
     def __init__(self) -> None:
@@ -39,11 +43,9 @@ class EmailTriageEnv:
         self._state = EmailTriageState(
             task_id=spec.task_id,
             emails=list(spec.emails),
-            current_email_index=0,
-            action_history=[],
-            steps_taken=0,
+            current_inbox=[e.id for e in spec.emails],
+            pending_threads=[e.id for e in spec.emails if "RE:" in e.subject or "follow-up" in e.subject.lower()],
             max_steps=spec.max_steps,
-            episode_grader_score=None,
         )
 
     def reset(self, task_id: Optional[str] = None) -> Dict[str, object]:
@@ -56,40 +58,45 @@ class EmailTriageEnv:
         return self._observation()
 
     def _observation(self) -> Dict[str, object]:
+        g_in = self._grader_input()
+        current_score = grade_task(self._state.task_id, g_in)
+        
         obs = {
             "task_id": self._state.task_id,
             "steps_taken": self._state.steps_taken,
             "max_steps": self._state.max_steps,
-            "emails_remaining": len(self._state.emails) - self._state.current_email_index,
+            "emails_remaining": len(self._state.current_inbox),
             "total_emails": len(self._state.emails),
+            "current_grader_score": current_score,
+            "flow_step": self._state.flow_step,
         }
         
-        if self._state.current_email_index < len(self._state.emails):
-            current = self._state.emails[self._state.current_email_index]
-            obs["current_email"] = {
-                "id": current.id,
-                "sender": current.sender,
-                "subject": current.subject,
-                "body": current.body,
-                "category": current.category,
-                "priority_score": current.priority_score,
-                "urgency_level": current.urgency_level,
-                "sentiment": current.sentiment,
-                "deadline_extracted": current.deadline_extracted,
-                "action_recommendation": current.action_recommendation,
-                "suggested_reply": current.suggested_reply,
-            }
+        if self._state.selected_email:
+            current = next((e for e in self._state.emails if e.id == self._state.selected_email), None)
+            if current:
+                obs["current_email"] = {
+                    "id": current.id,
+                    "sender": current.sender,
+                    "subject": current.subject,
+                    "body": current.body,
+                    "category": current.category,
+                    "priority_score": current.priority_score,
+                    "urgency_level": current.urgency_level,
+                    "sentiment": current.sentiment,
+                    "deadline_extracted": current.deadline_extracted,
+                    "action_recommendation": current.action_recommendation,
+                    "suggested_reply": current.suggested_reply,
+                }
+            else:
+                obs["current_email"] = None
         else:
             obs["current_email"] = None
             
-        g_in = self._grader_input()
-        obs["current_grader_score"] = grade_task(self._state.task_id, g_in)
-        
         return obs
 
     def state(self) -> Dict[str, object]:
         g_in = self._grader_input()
-        current_partial = grade_task(self._state.task_id, g_in)
+        current_score = grade_task(self._state.task_id, g_in)
         
         return {
             "task_id": self._state.task_id,
@@ -98,9 +105,14 @@ class EmailTriageEnv:
             "steps_taken": self._state.steps_taken,
             "max_steps": self._state.max_steps,
             "episode_grader_score": self._state.episode_grader_score,
-            "current_grader_score": current_partial,
-            "completed_task_scores": dict(self._completed_task_scores),
-            "registered_tasks": [t.task_id for t in TASK_LIST],
+            "current_grader_score": current_score,
+            "current_inbox": list(self._state.current_inbox),
+            "selected_email": self._state.selected_email,
+            "classified_labels": dict(self._state.classified_labels),
+            "pending_threads": list(self._state.pending_threads),
+            "reward_so_far": self._state.reward_so_far,
+            "resolved_count": self._state.resolved_count,
+            "flow_step": self._state.flow_step,
         }
 
     def _grader_input(self) -> GraderInput:
@@ -110,78 +122,110 @@ class EmailTriageEnv:
             action_history=list(self._state.action_history),
             steps_taken=self._state.steps_taken,
             max_steps=self._state.max_steps,
+            classified_labels=self._state.classified_labels,
+            priority_order=self._state.priority_order,
+            replies=self._state.replies,
+            thread_statuses=self._state.thread_statuses,
+            resolved_count=self._state.resolved_count,
         )
 
     def _step_reward_open(self, raw: float) -> float:
-        """Step rewards also stay strictly inside (0, 1) for validator consistency."""
         x = float(raw)
-        if x <= 0.0:
-            return 0.01
-        if x >= 1.0:
-            return 0.99
+        if x <= 0.0: return 0.01
+        if x >= 1.0: return 0.99
         return max(0.01, min(0.99, x))
 
-    def step(self, action: int, category: Optional[str] = None, urgency_level: Optional[str] = None) -> Dict[str, object]:
-        if action not in {0, 1, 2, 3}:
-            self._advance_step()
-            return {
-                "state": self._observation(),
-                "reward": self._step_reward_open(0.0),
-                "done": self._is_done(),
-            }
-
-        reward = 0.0
-
-        if self._state.current_email_index < len(self._state.emails):
-            current = self._state.emails[self._state.current_email_index]
-            self._state.action_history.append(action)
-            self._state.current_email_index += 1
-            
-            # Base partial rewards (max 1.0)
-            # user spec: +0.2 correct category, +0.3 correct action, +0.2 fast completion
-            # We'll use +0.3 for correct urgency, +0.2 correct category, +0.5 correct action since we have 3 variables.
-            
-            # Calculate fast completion: fewer steps taken
-            # Since step is per email, fast completion is more about episode level.
-            # At step level, if action is taken without "wasting" steps on the same email (we don't allow that anyway),
-            # we can just give a baseline +0.1 for taking a valid action.
-            
-            # Penalties: wrong spam classification
-            
-            r_action = 0.0
-            r_category = 0.0
-            r_urgency = 0.0
-            
-            if action == current.expected_action:
-                r_action = 0.5
-            elif action == 3 and current.expected_action != 3:
-                r_action = -0.2 # Penalty: wrong spam classification
-                
-            if category is not None and category.lower() == current.category.lower():
-                r_category = 0.2
-                
-            if urgency_level is not None and urgency_level.lower() == current.urgency_level.lower():
-                r_urgency = 0.3
-                
-            reward = max(0.0, r_action + r_category + r_urgency)
-        else:
-            # Penalty: unnecessary repeated actions after completion
-            reward = -0.2
-            
-        self._advance_step()
-        reward = self._step_reward_open(reward)
-
-        done = self._is_done()
-        if done and self._state.episode_grader_score is None:
-            final = grade_task(self._state.task_id, self._grader_input())
-            self._state.episode_grader_score = final
-            self._completed_task_scores[self._state.task_id] = final
-
-        return {"state": self._observation(), "reward": reward, "done": done}
-
-    def _advance_step(self) -> None:
+    def step(self, action: int, category: Optional[str] = None, urgency_level: Optional[str] = None, priority_order: Optional[List[int]] = None, reply: Optional[str] = None, thread_status: Optional[str] = None, selected_email_id: Optional[str] = None) -> Dict[str, object]:
+        self._state.action_history.append(action)
         self._state.steps_taken += 1
+        
+        penalty = 0.0
+        
+        # Maps user's example flow:
+        # action 0 = inspect -> moves to select
+        # action 5 = select email
+        # action 1 = prioritize
+        # action 2 = classify
+        # action 3 = reply/action
+        # action 4 = resolve
+        
+        if action == 0:
+            self._state.flow_step = "select_email"
+            
+        elif action == 5:
+            if selected_email_id and selected_email_id in self._state.current_inbox:
+                self._state.selected_email = selected_email_id
+                self._state.flow_step = "classify"
+            else:
+                penalty -= 0.1 # Invalid email selection
+                
+        elif action == 1:
+            if priority_order:
+                self._state.priority_order = priority_order
+                self._state.flow_step = "select_email"
+                
+        elif action == 2:
+            if self._state.selected_email:
+                if self._state.selected_email not in self._state.classified_labels:
+                    self._state.classified_labels[self._state.selected_email] = {}
+                if category:
+                    self._state.classified_labels[self._state.selected_email]["category"] = category
+                if urgency_level:
+                    self._state.classified_labels[self._state.selected_email]["urgency_level"] = urgency_level
+                self._state.flow_step = "action_or_reply"
+            else:
+                penalty -= 0.1
+                
+        elif action == 3:
+            if self._state.selected_email:
+                if reply:
+                    self._state.replies[self._state.selected_email] = reply
+                if thread_status:
+                    self._state.thread_statuses[self._state.selected_email] = thread_status
+                
+                # Check for wrong spam escalation penalty
+                current_email = next((e for e in self._state.emails if e.id == self._state.selected_email), None)
+                if current_email and thread_status == "spam" and current_email.expected_action != "spam":
+                    penalty -= 0.2 # Wrong spam escalation
+                    
+                self._state.flow_step = "resolve"
+            else:
+                penalty -= 0.1
+                
+        elif action == 4:
+            if self._state.selected_email in self._state.current_inbox:
+                self._state.current_inbox.remove(self._state.selected_email)
+                if self._state.selected_email in self._state.pending_threads:
+                    self._state.pending_threads.remove(self._state.selected_email)
+                self._state.resolved_count += 1
+                self._state.selected_email = None
+                self._state.flow_step = "inspect_inbox"
+            else:
+                penalty -= 0.1
+                
+        else:
+            penalty -= 0.1 # Unknown action
 
-    def _is_done(self) -> bool:
-        no_work_left = self._state.current_email_index >= len(self._state.emails)
-        return no_work_left or self._state.steps_taken >= self._state.max_steps
+        # Infinite loop penalty approximation
+        if self._state.steps_taken > self._state.max_steps * 1.5:
+            penalty -= 0.1
+            
+        old_score = self._state.reward_so_far
+        g_in = self._grader_input()
+        new_score = grade_task(self._state.task_id, g_in)
+        
+        # The step reward is the delta of the grader score plus any penalties
+        step_reward = max(0.0, new_score - old_score) + penalty
+        self._state.reward_so_far = new_score
+        
+        done = len(self._state.current_inbox) == 0 or self._state.steps_taken >= self._state.max_steps
+        
+        if done and self._state.episode_grader_score is None:
+            self._state.episode_grader_score = new_score
+            self._completed_task_scores[self._state.task_id] = new_score
+            
+        return {
+            "state": self._observation(),
+            "reward": self._step_reward_open(step_reward),
+            "done": done
+        }
